@@ -1,6 +1,6 @@
 // 홈: 장소 휠을 돌려 갈 곳을 고른다. Classroom만 열려 있고 나머지는 Coming soon
 import { AnimatePresence, motion } from 'framer-motion';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CharacterSprite } from '../components/CharacterSprite';
 import { FlameIcon } from '../components/Icons';
 import { PlaceWheel } from '../components/PlaceWheel';
@@ -9,11 +9,13 @@ import { PLACES, type Place } from '../data/places';
 import { loadValue, save } from '../lib/storage';
 import { screenMotion } from '../lib/motion';
 import { readStreak } from '../lib/streak';
+import { dueGuestPlans } from '../lib/calendar';
 import styles from './HomeScreen.module.css';
 
 interface Props {
   characterId: CharacterId | null;
   onGo: (place: Place) => void;
+  onCalendar: () => void;
   onChangeCharacter: () => void;
 }
 
@@ -25,13 +27,23 @@ const greeting = (name: string) => {
   return <>{word}, <b>{name}</b></>;
 };
 
-export function HomeScreen({ characterId, onGo, onChangeCharacter }: Props) {
+export function HomeScreen({ characterId, onGo, onCalendar, onChangeCharacter }: Props) {
   const character = getCharacter(characterId);
   const streak = readStreak();
   const [index, setIndex] = useState(() => Math.max(0, PLACES.findIndex((p) => p.id === loadValue('lastPlace', 'classroom'))));
   const [walking, setWalking] = useState(false);
   const [going, setGoing] = useState(false);
+  const [dueCount, setDueCount] = useState(() => dueGuestPlans().length);
+  const goTimer = useRef<number | null>(null);
   const place = PLACES[index];
+
+  useEffect(() => {
+    const update = () => setDueCount(dueGuestPlans().length);
+    const timer = window.setInterval(update, 60_000);
+    window.addEventListener('focus', update);
+    return () => { window.clearInterval(timer); window.removeEventListener('focus', update); };
+  }, []);
+  useEffect(() => () => { if (goTimer.current !== null) window.clearTimeout(goTimer.current); }, []);
 
   const changeIndex = (i: number) => {
     setIndex(i);
@@ -41,7 +53,7 @@ export function HomeScreen({ characterId, onGo, onChangeCharacter }: Props) {
   const go = () => {
     if (!place.available || going) return;
     setGoing(true);
-    window.setTimeout(() => onGo(place), 2000);
+    goTimer.current = window.setTimeout(() => onGo(place), 2000);
   };
 
   // 휠이 도는 중이거나 출발했을 때 "Going to …"
@@ -66,7 +78,7 @@ export function HomeScreen({ characterId, onGo, onChangeCharacter }: Props) {
       </header>
 
       <div className={styles.brand}>
-        <h1>MOODEE</h1>
+        <div className={styles.brandRow}><h1>MOODEE</h1><button type="button" className={styles.calendarButton} onClick={onCalendar} aria-label={dueCount ? `Open Calendar, ${dueCount} local reminder${dueCount === 1 ? '' : 's'} due` : 'Open Calendar'}>▦ <span>Calendar</span>{dueCount > 0 && <i className={styles.dueDot} aria-hidden />}</button></div>
         <p>A cozy world for distracted minds.</p>
       </div>
 

@@ -2,12 +2,14 @@
 
 A cozy world for distracted minds.
 
-흐름: (첫 실행) 캐릭터 선택 → 홈 장소 휠(돌리면 캐릭터가 옆모습으로 걸음, "Going to …") → 교실 탑뷰에서 걸어서 자리 고르기(조이스틱·방향키·바닥 탭) → 눈높이 뷰로 앉기 → 소리 설정 → 집중 타이머
+흐름: (첫 실행) 캐릭터 선택 → 홈 장소 휠(돌리면 캐릭터가 옆모습으로 걸음, "Going to …") → 시작할 한 가지 적기 → 교실 탑뷰에서 걸어서 자리 고르기(조이스틱·방향키·바닥 탭) → 눈높이 뷰로 앉기 → 소리 설정 → 집중 타이머
 
 ```bash
 npm install
 npm run dev
 ```
+
+Calendar, rencana belajar, dan tujuan sebelum Classroom tersedia untuk tamu. Untuk menghubungkan Google Calendar pada penguji terbatas, ikuti [panduan Google Cloud dan Supabase](docs/calendar-google-setup.md). Tes: `npm test`; build: `npm run build`.
 
 ## 에셋
 

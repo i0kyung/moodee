@@ -12,10 +12,12 @@ import type { Seat } from '../data/places';
 import { loadValue, save } from '../lib/storage';
 import { completeSession } from '../lib/streak';
 import { screenMotion } from '../lib/motion';
+import type { SessionIntent } from '../lib/calendar';
 import styles from './ClassroomScreen.module.css';
 
 interface Props {
   characterId: CharacterId | null;
+  intent: SessionIntent;
   onExit: () => void;
 }
 
@@ -28,7 +30,7 @@ const fmt = (ms: number) => {
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 };
 
-export function ClassroomScreen({ characterId, onExit }: Props) {
+export function ClassroomScreen({ characterId, intent, onExit }: Props) {
   const character = getCharacter(characterId);
   const { settings, playing, start, stop } = useSoundscape();
   const [phase, setPhase] = useState<Phase>('explore');
@@ -149,6 +151,8 @@ export function ClassroomScreen({ characterId, onExit }: Props) {
           <span className={styles.spacer} />
         )}
       </header>
+
+      <div className={styles.intentBadge} aria-label={`My one thing: ${intent.text}`}><span>MY ONE THING</span><b>{intent.text}</b></div>
 
       <AnimatePresence>
         {phase === 'sitting' && (

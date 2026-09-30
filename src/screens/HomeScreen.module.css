@@ -96,6 +96,9 @@
   font-weight: 900;
   letter-spacing: 0.04em;
 }
+.brandRow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.calendarButton { position: relative; flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 9px 13px; border-radius: 999px; background: var(--card-strong); box-shadow: var(--shadow-soft); font-size: 13px; font-weight: 900; }
+.dueDot { position: absolute; top: 2px; right: 5px; width: 8px; height: 8px; border-radius: 50%; background: var(--sunset); }
 .brand p {
   margin: 0;
   font-size: 15px;
