@@ -66,7 +66,7 @@ export function HomeScreen({ characterId, onGo, onChangeCharacter }: Props) {
       </header>
 
       <div className={styles.brand}>
-        <h1>MOODIE</h1>
+        <h1>MOODEE</h1>
         <p>A cozy world for distracted minds.</p>
       </div>
 

@@ -1,4 +1,4 @@
-# MOODIE
+# MOODEE
 
 A cozy world for distracted minds.
 

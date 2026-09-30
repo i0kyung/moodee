@@ -53,7 +53,7 @@ export function CharacterSelectScreen({ initialId, onBack, onConfirm }: Props) {
             <span className={styles.eyebrow}>Your study buddy</span>
           ) : (
             <>
-              <span className={styles.logo}>MOODIE</span>
+              <span className={styles.logo}>MOODEE</span>
               <p className={styles.intro}>A cozy world for distracted minds.</p>
             </>
           )}
