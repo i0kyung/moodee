@@ -17,7 +17,7 @@ interface Props {
   onChangeCharacter: () => void;
 }
 
-// 시간대 인사 + 이름 (예: "Good evening, Sora" / "Still up, Sora?")
+// 시간대 인사 + 이름 (예: "Good evening, Nier" / "Still up, Nier?")
 const greeting = (name: string) => {
   const h = new Date().getHours();
   if (h < 5) return <>Still up, <b>{name}</b>?</>;

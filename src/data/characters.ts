@@ -16,7 +16,7 @@ const base = import.meta.env.BASE_URL;
 export const CHARACTERS: Character[] = [
   { id: 'bob', name: 'Dahyeon', vibe: 'Short hair, short breaks.', sheet: `${base}assets/characters/char-bob.png`, hair: '#3E3330' },
   { id: 'ponytail', name: 'Minkyung', vibe: 'Ties it up and gets it done.', sheet: `${base}assets/characters/char-ponytail.png`, hair: '#3B302C' },
-  { id: 'wavy', name: 'Sora', vibe: 'Goes with the flow.', sheet: `${base}assets/characters/char-wavy.png`, hair: '#342A27' },
+  { id: 'wavy', name: 'Nier', vibe: 'Goes with the flow.', sheet: `${base}assets/characters/char-wavy.png`, hair: '#342A27' },
   { id: 'curly-glasses', name: 'Nazwan', vibe: 'Reads every footnote.', sheet: `${base}assets/characters/char-curly-glasses.png`, hair: '#3A302B' },
 ];
 
