@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion';
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import type { Character, Pose } from '../data/characters';
+import { CLASSMATES, classmateLooks } from '../data/classmates';
 import { CLASSROOM, type Seat } from '../data/places';
 import { camera, useElementSize } from '../lib/useElementSize';
 import { makeWalker, type Pt } from '../lib/walkGrid';
@@ -13,17 +14,21 @@ import styles from './SeatPicker.module.css';
 interface Props {
   character: Character;
   onSit: (seat: Seat) => void;
+  onPeople: () => void; // 앉아 있는 친구를 누르면 "같은 방 사람들" 열기
 }
 
 const { width: W, height: H, top } = CLASSROOM;
-const SPEED = 230; // 이미지 px/초
+const SPEED = 140; // 이미지 px/초
 const NEAR = 38; // 이 거리 안이면 앉을 수 있음
 const ZOOM = 1.25; // 창문(햇살이 들어오는 곳)이 화면 왼쪽에 걸리도록
 
 type Dir = 'up' | 'down' | 'left' | 'right';
 const POSE_OF: Record<Dir, Pose> = { up: 'back', down: 'front', left: 'side', right: 'sideAlt' };
 
-export function SeatPicker({ character, onSit }: Props) {
+export function SeatPicker({ character, onSit, onPeople }: Props) {
+  // 이미 친구가 앉아 있는 자리
+  const looks = useMemo(() => classmateLooks(character.id), [character.id]);
+  const taken = useMemo(() => new Map(CLASSMATES.map((m) => [m.topSeat, m])), []);
   const viewport = useRef<HTMLDivElement>(null);
   const { w: vw, h: vh } = useElementSize(viewport);
   const walker = useMemo(() => makeWalker(top.bounds, top.blockers), []);
@@ -113,6 +118,7 @@ export function SeatPicker({ character, onSit }: Props) {
     let best: Seat | null = null;
     let bd = NEAR;
     for (const s of top.seats) {
+      if (taken.has(s.id)) continue;
       const d = Math.hypot(s.x - pos.x, s.y - pos.y);
       if (d < bd) {
         bd = d;
@@ -120,7 +126,7 @@ export function SeatPicker({ character, onSit }: Props) {
       }
     }
     return best;
-  }, [pos]);
+  }, [pos, taken]);
 
   const walkTo = (p: Pt) => {
     const r = walker.path(posRef.current, p);
@@ -141,6 +147,27 @@ export function SeatPicker({ character, onSit }: Props) {
           <SunLight variant="top" />
 
           {top.seats.map((s) => {
+            const mate = taken.get(s.id);
+            // 친구가 앉은 자리: 캐릭터 + "이름 · 공부 주제" 이름표
+            if (mate)
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  className={styles.mate}
+                  style={{ left: s.x, top: s.y, height: top.charH * H * 0.92, zIndex: Math.round(s.y) }}
+                  aria-label={`${mate.name} is studying ${mate.subject}`}
+                  onPointerDown={(e) => {
+                    e.stopPropagation();
+                    onPeople();
+                  }}
+                >
+                  <CharacterSprite character={looks[mate.id]} pose="back" />
+                  <span className={styles.mateTag}>
+                    <b>{mate.name}</b> {mate.subject}
+                  </span>
+                </button>
+              );
             const isNear = near?.id === s.id;
             return (
               <button
@@ -188,7 +215,7 @@ export function SeatPicker({ character, onSit }: Props) {
           ) : (
             <p className={styles.hint}>
               <b>Find your seat</b>
-              Walk to a glowing chair. Drag the stick, use arrow keys, or tap the floor.
+              {CLASSMATES.length} classmates are studying. Walk to a glowing chair — drag the stick or tap the floor.
             </p>
           )}
         </div>

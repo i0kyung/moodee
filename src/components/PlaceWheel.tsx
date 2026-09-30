@@ -1,4 +1,6 @@
-// 장소 휠: 드래그/탭으로 돌리면 캐릭터가 옆모습으로 걷고, 맨 위에 온 장소가 선택됨
+// 장소 휠: 화면 아래의 큰 둥근 지형(휠) 위에 장소가 둘레를 따라 놓인다. 끌거나 탭하면 휠이 돌고 맨 위 장소가 선택됨
+// 선택된 장소는 휠 꼭대기에 크게 서 있고, 양옆 장소는 곡면을 따라 기울어지며 작고 흐리게 물러난다
+// 건물 발판은 휠 표면에 닿도록(살짝 묻히게) 맞추고, 캐릭터는 그 앞 표면에 발을 딛는다
 import { animate, useMotionValue, useMotionValueEvent } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
 import type { Character, Pose } from '../data/characters';
@@ -12,24 +14,32 @@ interface Props {
   character: Character;
   index: number;
   onIndexChange: (i: number) => void;
-  going: boolean; // Go를 누른 뒤 이동 연출 중
+  going: boolean; // 버튼을 누른 뒤 이동 연출 중
   onWalkingChange?: (walking: boolean) => void;
 }
 
-const DRAG_DEG_PER_PX = 0.4;
+const STEP = 32; // 장소 사이 각도: 양옆 장소가 화면 가장자리에 걸치도록
+const DRAG_DEG_PER_PX = 0.2;
+const BURY = 0.05; // 발판이 지형에 묻히는 깊이(아이콘 폭 대비)
+
+// 아이콘 이미지별 비율(높이/폭)과 발판 맨 아래의 세로 위치(이미지 높이 대비)
+const ICON_BASE: Record<string, { aspect: number; base: number }> = {
+  classroom: { aspect: 320 / 480, base: 0.94 },
+  cafe: { aspect: 1, base: 0.83 },
+  library: { aspect: 1, base: 0.825 },
+  museum: { aspect: 1, base: 0.855 },
+  'my-room': { aspect: 1, base: 0.82 },
+};
 
 export function PlaceWheel({ places, character, index, onIndexChange, going, onWalkingChange }: Props) {
   const n = places.length;
-  // 한 칸 간격(도). 양옆 장소가 화면 가장자리에 걸쳐 보이도록 360/n보다 촘촘하게 두고,
-  // 위치는 선택 기준으로 앞뒤 절반씩 감싸서(캐러셀) 항상 가운데 주변에 놓는다
-  const step = 50;
-  const rot = useMotionValue(-index * step);
+  const rot = useMotionValue(-index * STEP);
   const [angle, setAngle] = useState(rot.get());
   const [pose, setPose] = useState<Pose>('front');
   const drag = useRef<{ id: number; x: number; start: number; moved: boolean } | null>(null);
   const idleTimer = useRef<number>(0);
 
-  // 회전 방향에 따라 캐릭터가 걷는 방향(옆모습) 결정: 땅이 오른쪽으로 돌면 왼쪽으로 걷는 셈
+  // 휠이 도는 방향에 따라 캐릭터가 옆모습으로 걷는다
   useMotionValueEvent(rot, 'change', (v) => {
     const vel = rot.getVelocity();
     setAngle(v);
@@ -44,7 +54,7 @@ export function PlaceWheel({ places, character, index, onIndexChange, going, onW
     }
   });
 
-  const selectedFrom = (r: number) => (((Math.round(-r / step) % n) + n) % n);
+  const selectedFrom = (r: number) => ((Math.round(-r / STEP) % n) + n) % n;
 
   const snapTo = (target: number) => {
     animate(rot, target, { type: 'spring', stiffness: 120, damping: 20 });
@@ -54,23 +64,21 @@ export function PlaceWheel({ places, character, index, onIndexChange, going, onW
   // 가장 가까운 방향으로 i번 장소를 맨 위로
   const goToIndex = (i: number) => {
     const cur = rot.get();
-    const base = -i * step;
-    const cycle = n * step;
+    const base = -i * STEP;
+    const cycle = n * STEP;
     const k = Math.round((cur - base) / cycle);
     snapTo(base + k * cycle);
   };
 
-  // Go: 제자리에서 한 바퀴 걸어가는 연출
+  // 출발: 제자리에서 한 바퀴 걸어가는 연출
   useEffect(() => {
     if (!going) return;
-    // 장소들이 한 바퀴 돌아 다시 같은 곳이 맨 위로 오도록 n칸 이동
-    const c = animate(rot, rot.get() - n * step, { duration: 1.9, ease: [0.45, 0, 0.25, 1] });
+    const c = animate(rot, rot.get() - n * STEP, { duration: 1.9, ease: [0.45, 0, 0.25, 1] });
     return () => c.stop();
   }, [going, rot, n]);
 
   useEffect(() => () => window.clearTimeout(idleTimer.current), []);
 
-  // 방향키로도 돌리기
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (going) return;
@@ -82,6 +90,7 @@ export function PlaceWheel({ places, character, index, onIndexChange, going, onW
   });
 
   const walking = pose !== 'front';
+  const c = -angle / STEP; // 지금 맨 위에 있는 (연속) 인덱스
 
   return (
     <div
@@ -104,11 +113,9 @@ export function PlaceWheel({ places, character, index, onIndexChange, going, onW
         drag.current = null;
         if (!d) return;
         if (d.moved) {
-          // 손을 뗀 속도를 반영해 가장 가까운 칸으로 착 붙게
           const projected = rot.get() + rot.getVelocity() * 0.15;
-          snapTo(Math.round(projected / step) * step);
+          snapTo(Math.round(projected / STEP) * STEP);
         } else {
-          // 탭: 눌린 아이콘이 있으면 그 장소로
           const el = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>('[data-place-index]');
           if (el) goToIndex(Number(el.dataset.placeIndex));
         }
@@ -116,23 +123,14 @@ export function PlaceWheel({ places, character, index, onIndexChange, going, onW
     >
       <div className={styles.disc} aria-hidden />
 
-      {/* 캐릭터: 맨 위 장소 위에서 걷기 */}
-      <div className={styles.walker}>
-        <span className={styles.shadow} />
-        <div className={walking || going ? styles.walking : styles.idle}>
-          <CharacterSprite character={character} pose={going ? 'sideAlt' : pose} />
-        </div>
-      </div>
-
       <ul className={styles.ring} role="listbox" aria-label="Places" aria-activedescendant={`place-${places[index].id}`}>
         {places.map((p, i) => {
-          // 맨 위(0°)로부터의 각도 차이 → 흐림/투명도
-          const c = -angle / step; // 지금 맨 위에 있는 (연속) 인덱스
+          // 맨 위(0°)로부터 몇 칸 떨어졌는지(감싸서 -n/2 ~ n/2)
           const off = ((((i - c) % n) + n + n / 2) % n) - n / 2;
-          const a = off * step;
-          const t = Math.min(1, Math.abs(a) / step);
-          // 바로 옆(±1칸)까지만 보이고, 그보다 먼 장소는 휠 아래로 사라지듯 투명하게
-          const far = Math.max(0, Math.abs(off) - 1);
+          const a = off * STEP;
+          const t = Math.min(1, Math.abs(off)); // 0 = 선택, 1 = 바로 옆
+          const far = Math.max(0, Math.abs(off) - 1); // 바로 옆보다 먼 장소는 휠 아래로 사라짐
+          const g = ICON_BASE[p.id] ?? { aspect: 1, base: 0.85 };
           return (
             <li
               key={p.id}
@@ -142,20 +140,39 @@ export function PlaceWheel({ places, character, index, onIndexChange, going, onW
               data-place-index={i}
               className={styles.slot}
               style={{
-                transform: `rotate(${a}deg) translateY(calc(-1 * var(--orbit)))`,
-                opacity: Math.max(0, 1 - 0.4 * t - far * 1.2),
-                filter: `blur(${t * 1.6}px) grayscale(${t * 0.35})`,
+                transform: `rotate(${a}deg) translateY(calc(var(--disc) / -2))`,
+                opacity: Math.max(0, 1 - 0.55 * t - far * 1.4),
                 zIndex: Math.round(10 - t * 5),
+                ['--s' as string]: 1 - t * 0.5,
+                ['--blur' as string]: `${t * 2.2}px`,
+                ['--here' as string]: Math.max(0, 1 - t),
               }}
             >
-              <div className={styles.iconWrap} style={{ scale: `${1.12 - t * 0.28}` }}>
+              <span className={styles.glow} />
+              <span className={styles.contact} />
+              <div
+                className={styles.iconWrap}
+                style={{
+                  top: `calc(var(--icon) * ${-(g.aspect * g.base - BURY)})`,
+                  transformOrigin: `50% ${g.base * 100}%`,
+                  ['--fade1' as string]: `${(g.base - (BURY + 0.025) / g.aspect) * 100}%`,
+                  ['--fade2' as string]: `${(g.base - (BURY - 0.015) / g.aspect) * 100}%`,
+                }}
+              >
                 <PlaceIcon place={p} className={styles.icon} />
-                {!p.available && t < 0.5 && <span className={styles.soon}>Coming soon</span>}
               </div>
             </li>
           );
         })}
       </ul>
+
+      {/* 캐릭터: 맨 위 장소 앞, 휠 표면에 발을 딛고 선다 */}
+      <div className={styles.walker}>
+        <span className={styles.shadow} />
+        <div className={walking || going ? styles.walking : styles.idle}>
+          <CharacterSprite character={character} pose={going ? 'sideAlt' : pose} />
+        </div>
+      </div>
     </div>
   );
 }

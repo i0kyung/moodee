@@ -193,3 +193,130 @@
   font-weight: 800;
   color: var(--warm-gray);
 }
+
+/* ── 피드백 반영: 사람 수, 집중 중 패널, 완료 통계 ── */
+.topRight {
+  display: flex;
+  gap: 8px;
+}
+.topRight .people {
+  width: auto;
+  padding: 0 12px;
+  gap: 4px;
+  display: flex;
+  align-items: center;
+  border-radius: 999px;
+}
+.people b {
+  font-size: 15px;
+  font-weight: 900;
+}
+.nowLabel {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--lavender-deep);
+}
+.with {
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--warm-gray);
+}
+.end {
+  flex: none;
+  padding: 0 22px;
+}
+.doneStats {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: -6px 0 18px;
+  flex-wrap: wrap;
+}
+.doneStats span {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(242, 196, 107, 0.28);
+  font-size: 14px;
+  font-weight: 700;
+  color: #6f6474;
+}
+.doneStats b {
+  color: var(--charcoal);
+  font-weight: 900;
+}
+
+/* ── 보상(C8)·체크인(C9)·생각 메모(C6) ── */
+.coinPile {
+  position: relative;
+  width: 150px;
+  height: 96px;
+  margin: 0 auto 8px;
+}
+.coinPile img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+.doneCard h2 em {
+  font-style: normal;
+  color: var(--sunset);
+  white-space: nowrap;
+}
+.doneHint {
+  display: block;
+  margin: -8px 4px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--warm-gray);
+}
+.friction {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.friction button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 12px 0 10px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: inset 0 0 0 2px rgba(46, 42, 42, 0.06);
+  transition: transform 0.12s, background 0.12s;
+}
+.friction button:active {
+  transform: scale(0.94);
+  background: rgba(242, 196, 107, 0.4);
+}
+.friction b {
+  font-size: 20px;
+  font-weight: 900;
+}
+.friction small {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--warm-gray);
+}
+.thoughtInput {
+  width: 100%;
+  height: 50px;
+  margin-bottom: 12px;
+  padding: 0 16px;
+  border: 2px solid rgba(46, 42, 42, 0.1);
+  border-radius: 16px;
+  background: #fff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--charcoal);
+}
+.doneCard :global(.pill):disabled {
+  opacity: 0.5;
+}

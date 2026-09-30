@@ -61,3 +61,18 @@ export const EyeViewIcon = (p: SVGProps<SVGSVGElement>) => (
     <path d="M4 14h16M12 4v10" />
   </svg>
 );
+
+export const PeopleIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base({ width: 20, height: 20, ...p })}>
+    <circle cx="9" cy="8" r="3.5" />
+    <path d="M2.5 20c.6-3.6 3.2-5.5 6.500-5.500s5.900 1.900 6.500 5.500" />
+    <path d="M16 4.800a3.500 3.500 0 0 1 0 6.400M18.500 14.900c1.700.8 2.700 2.500 3 5.100" />
+  </svg>
+);
+
+export const CoinIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base({ width: 18, height: 18, stroke: 'none', ...p })}>
+    <circle cx="12" cy="12" r="10" fill="#F2C46B" />
+    <circle cx="12" cy="12" r="6.500" fill="none" stroke="#D99A2B" strokeWidth="2" />
+  </svg>
+);

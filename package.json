@@ -1,5 +1,5 @@
 {
-  "name": "moodie",
+  "name": "moodee",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "assets": "node scripts/prepare-assets.mjs"
+    "assets": "node scripts/prepare-assets.mjs",
+    "test:rules": "node scripts/test-rules.mts"
   },
   "dependencies": {
     "framer-motion": "^13.4.5",

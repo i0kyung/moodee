@@ -37,9 +37,9 @@ body,
   overflow: hidden;
 }
 
-/* 데스크톱 배경: 따뜻한 오후 그라데이션 */
+/* 데스크톱 배경: 로고와 같은 푸른 톤의 은은한 빛 */
 body {
-  background: radial-gradient(120% 90% at 20% 0%, #fbe6cf 0%, transparent 55%),
+  background: radial-gradient(120% 90% at 20% 0%, #d6e0fb 0%, transparent 55%),
     radial-gradient(90% 80% at 100% 100%, #d9cbeb 0%, transparent 60%), #efe6f3;
 }
 

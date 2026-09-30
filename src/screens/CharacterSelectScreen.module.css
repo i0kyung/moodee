@@ -29,10 +29,9 @@
 }
 .logo {
   display: block;
-  font-size: 30px;
-  line-height: 1;
-  font-weight: 900;
-  letter-spacing: 0.06em;
+  height: 64px;
+  width: auto;
+  margin: 0 auto;
 }
 .intro {
   margin: 4px 0 14px;
@@ -158,4 +157,118 @@
 
 .dock {
   padding: 16px 20px calc(var(--safe-bottom) + 20px);
+}
+
+/* ── 잠긴 Cloudee ── */
+.coinChip {
+  justify-self: end;
+  height: 34px;
+  padding: 0 10px 0 8px;
+}
+.top {
+  grid-template-columns: 64px 1fr 64px;
+}
+.lockedSprite {
+  filter: brightness(0.22) saturate(0.4);
+}
+.bigLock {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 22px;
+  color: #7a5a12;
+  background: linear-gradient(180deg, #fbe2a0, var(--honey));
+  box-shadow: 0 0 24px rgba(242, 196, 107, 0.9), 0 6px 0 rgba(122, 90, 18, 0.35);
+  animation: lockFloat 2.4s ease-in-out infinite;
+}
+@keyframes lockFloat {
+  50% {
+    translate: -50% -58%;
+  }
+}
+.thumbLock {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--charcoal);
+}
+.dock :global(.pill):disabled {
+  filter: grayscale(0.6);
+  opacity: 0.75;
+}
+
+/* ── Premium Cloudee(Cloudy) ── */
+.proBadge {
+  position: absolute;
+  left: 50%;
+  top: 30%;
+  translate: -50% 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  color: #fff;
+  background: linear-gradient(180deg, #7f95e6, #5b74cf);
+  box-shadow: 0 6px 16px -4px rgba(91, 116, 207, 0.7);
+}
+.dock .proCta {
+  background: linear-gradient(180deg, #7f95e6, #5b74cf);
+  box-shadow: 0 10px 24px -8px rgba(91, 116, 207, 0.7), inset 0 -3px 0 rgba(0, 0, 0, 0.08);
+}
+.proBackdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(46, 42, 42, 0.45);
+}
+.proModal {
+  width: 100%;
+  max-width: 320px;
+  padding: 22px 20px 18px;
+  border-radius: 28px;
+  text-align: center;
+  background: var(--cream);
+}
+.proModal h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 900;
+}
+.proModal p {
+  margin: 0 0 16px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: #6f6474;
+}
+.proModal :global(.pill) {
+  width: 100%;
+  min-height: 50px;
+}
+
+/* Cloudy: 유료처럼 잠긴 모습(실루엣 + 자물쇠는 구름 위에) */
+.proLock {
+  top: 66%;
+  color: #fff;
+  background: linear-gradient(180deg, #8fa3ee, #5b74cf);
+  box-shadow: 0 0 24px rgba(127, 149, 230, 0.9), 0 6px 0 rgba(60, 80, 160, 0.4);
+}
+.proBadge {
+  top: 40%;
 }

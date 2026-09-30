@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useRef } from 'react';
 import type { SoundId } from '../audio/soundscape';
 import type { Character } from '../data/characters';
+import { CLASSMATES, classmateLooks } from '../data/classmates';
 import { CLASSROOM } from '../data/places';
 import { camera, useElementSize } from '../lib/useElementSize';
 import { CharacterSprite } from './CharacterSprite';
@@ -16,6 +17,8 @@ interface Props {
   raised: boolean; // 아래쪽에 소리 설정 창이 열려 있으면 캐릭터가 보이도록 화면을 위로
   soundOn: (id: SoundId) => boolean;
   onToggleSound: (id: SoundId) => void;
+  mySubject?: string; // 집중 중인 주제(내 이름표에 표시)
+  onPeople: () => void;
 }
 
 const { width: W, height: H, back } = CLASSROOM;
@@ -27,7 +30,11 @@ const HOTSPOTS: { id: SoundId; x: number; y: number; label: string }[] = [
   { id: 'breeze', x: 99, y: 334, label: 'Window' },
 ];
 
-export function SeatedScene({ character, side, focusing, raised, soundOn, onToggleSound }: Props) {
+const base = import.meta.env.BASE_URL;
+const rowChairs = (row: 1 | 2) => `${base}assets/places/classroom-backview-chairs-row${row}.png`;
+
+export function SeatedScene({ character, side, focusing, raised, soundOn, onToggleSound, mySubject, onPeople }: Props) {
+  const looks = classmateLooks(character.id);
   const viewport = useRef<HTMLDivElement>(null);
   const { w: vw, h: vh } = useElementSize(viewport);
   const seat = back.seat[side];
@@ -50,6 +57,33 @@ export function SeatedScene({ character, side, focusing, raised, soundOn, onTogg
         >
           <img className={styles.bg} src={back.src} alt="Classroom at eye level, seen from behind your seat" draggable={false} />
           <SunLight variant="back" />
+          {/* 먼 줄부터: 앞줄(1·2번째 줄)에 앉은 친구 → 그 줄 의자 등받이. 가까운 줄이 나중에 그려져야 가려짐이 맞는다 */}
+          {([1, 2] as const).map((row) => (
+            <div key={row} className={styles.rowLayer}>
+              {CLASSMATES.filter((m) => m.back.row === row).map((m, i) => (
+                <div
+                  key={m.id}
+                  className={styles.me}
+                  style={{
+                    left: m.back.x,
+                    top: m.back.hipY,
+                    height: m.back.h * H,
+                    translate: `-50% -${back.hipCut * 100}%`,
+                    clipPath: `inset(0 0 ${(1 - back.hipCut) * 100}% 0)`,
+                  }}
+                >
+                  <motion.div
+                    className={styles.body}
+                    animate={{ y: [0, 3, 0], rotate: [0, i % 2 ? 1 : -1, 0] }}
+                    transition={{ duration: 2.2 + i * 0.7 + row * 0.4, repeat: Infinity, ease: 'easeInOut' }}
+                  >
+                    <CharacterSprite character={looks[m.id]} pose="back" />
+                  </motion.div>
+                </div>
+              ))}
+              <img className={styles.bg} src={rowChairs(row)} alt="" draggable={false} />
+            </div>
+          ))}
 
           {/* 엉덩이 아래를 잘라낸 캐릭터 → 그 위에 의자 등받이 레이어 */}
           <div
@@ -80,6 +114,25 @@ export function SeatedScene({ character, side, focusing, raised, soundOn, onTogg
             </motion.div>
           </div>
           <img className={styles.bg} src={back.chairs} alt="" draggable={false} />
+
+          {/* 이름표: 누가 무엇을 공부 중인지(채팅 없이 상태만) */}
+          {CLASSMATES.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              className={styles.tag}
+              style={{ left: m.back.x, top: m.back.hipY - m.back.h * H * 0.5 }}
+              onClick={onPeople}
+              aria-label={`${m.name} is studying ${m.subject}. See everyone in this room`}
+            >
+              <b>{m.name}</b> {m.subject}
+            </button>
+          ))}
+          {focusing && (
+            <span className={`${styles.tag} ${styles.myTag}`} style={{ left: seat.x, top: seat.hipY - cellH * 0.5 }}>
+              <b>You</b> {mySubject || 'Focusing'}
+            </span>
+          )}
 
           {HOTSPOTS.map((h) => {
             const on = soundOn(h.id);

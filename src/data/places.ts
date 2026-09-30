@@ -1,4 +1,4 @@
-// 장소 목록: 이번 단계에서는 Classroom만 열림, 나머지는 Coming soon
+// 장소 목록: Classroom은 전체 흐름이 열려 있고, 나머지는 공간을 미리 둘러볼 수 있다(preview)
 export type PlaceId = 'classroom' | 'my-room' | 'library' | 'museum' | 'cafe';
 
 export interface Place {
@@ -6,19 +6,43 @@ export interface Place {
   name: string;
   blurb: string;
   icon: string;
-  available: boolean;
+  available: boolean; // 집중 루틴까지 구현된 곳
   tint: string;
+  // 둘러보기 화면: 배경(세로 이미지)과 캐릭터가 서는 자리(이미지 비율 좌표), 이 공간에서 하게 될 일
+  view?: { src: string; width: number; height: number; spot: { x: number; y: number; h: number }; pose: 'front' | 'back' };
+  mode?: string;
+  plans?: string[];
 }
 
 const base = import.meta.env.BASE_URL;
 
 // 홈 휠에 도는 순서(시계 방향)
 export const PLACES: Place[] = [
-  { id: 'classroom', name: 'Classroom', blurb: 'Clock ticks, pencil scratches, a breeze through the window.', icon: `${base}assets/places/icon-classroom.png`, available: true, tint: '#C9B8E0' },
-  { id: 'cafe', name: 'Café', blurb: 'Cups and chatter.', icon: `${base}assets/places/icon-cafe.png`, available: false, tint: '#F2C46B' },
-  { id: 'library', name: 'Library', blurb: 'Quiet pages.', icon: `${base}assets/places/icon-library.png`, available: false, tint: '#B79BD6' },
-  { id: 'museum', name: 'Museum', blurb: 'Echoing halls.', icon: `${base}assets/places/icon-museum.png`, available: false, tint: '#E9A3B0' },
-  { id: 'my-room', name: 'My Room', blurb: 'Soft and familiar.', icon: `${base}assets/places/icon-my-room.png`, available: false, tint: '#E8955A' },
+  { id: 'classroom', name: 'Classroom', blurb: 'Focus quietly with others.', icon: `${base}assets/places/icon-classroom.png`, available: true, tint: '#C9B8E0' },
+  {
+    id: 'cafe', name: 'Café', blurb: 'Meet, make something, or simply stay.', icon: `${base}assets/places/icon-cafe.png`, available: false, tint: '#F2C46B',
+    view: { src: `${base}assets/places/cafe-backview.jpg`, width: 941, height: 1672, spot: { x: 0.5, y: 0.66, h: 0.4 }, pose: 'back' },
+    mode: 'Be among people',
+    plans: ['Sit alone or at a table where talking is okay', 'Meet friends you added in the Classroom', 'Order a drink with coins you earned'],
+  },
+  {
+    id: 'library', name: 'Library', blurb: 'Give your thoughts somewhere to stay.', icon: `${base}assets/places/icon-library.png`, available: false, tint: '#B79BD6',
+    view: { src: `${base}assets/places/library-backview.jpg`, width: 941, height: 1672, spot: { x: 0.56, y: 0.66, h: 0.38 }, pose: 'back' },
+    mode: 'Sort your thoughts',
+    plans: ['Find the thoughts you parked during focus', 'Write ideas down fast, then shelve them as books', 'Pull an old note back out when you need it'],
+  },
+  {
+    id: 'museum', name: 'Museum', blurb: 'Turn moments into memories you can revisit.', icon: `${base}assets/places/icon-museum.png`, available: false, tint: '#E9A3B0',
+    view: { src: `${base}assets/places/museum-backview.jpg`, width: 941, height: 1672, spot: { x: 0.22, y: 0.68, h: 0.36 }, pose: 'back' },
+    mode: 'Remember',
+    plans: ['Pick a moment you want to keep', 'Turn it into a small memory object', 'Place it on a pedestal and write its story'],
+  },
+  {
+    id: 'my-room', name: 'My Room', blurb: 'Make this place feel like yours.', icon: `${base}assets/places/icon-my-room.png`, available: false, tint: '#E8955A',
+    view: { src: `${base}assets/places/myroom.jpg`, width: 941, height: 1440, spot: { x: 0.56, y: 0.655, h: 0.5 }, pose: 'front' },
+    mode: 'Make it yours',
+    plans: ['Rest between sessions', 'Dress your buddy with outfits from the wardrobe', 'Decorate with things you earned'],
+  },
 ];
 
 // ───────── 교실 ─────────

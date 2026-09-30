@@ -58,3 +58,34 @@
     box-shadow: 0 0 0 16px rgba(242, 196, 107, 0);
   }
 }
+
+.rowLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* 이름표(머리 위) */
+.tag {
+  position: absolute;
+  translate: -50% -100%;
+  white-space: nowrap;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 3px 8px rgba(46, 42, 42, 0.18);
+  font-size: 15px;
+  font-weight: 700;
+  color: #6f6474;
+}
+.tag b {
+  color: var(--charcoal);
+  font-weight: 900;
+}
+.myTag {
+  background: var(--charcoal);
+  color: rgba(255, 255, 255, 0.8);
+}
+.myTag b {
+  color: #fff;
+}

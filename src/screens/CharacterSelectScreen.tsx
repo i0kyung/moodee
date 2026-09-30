@@ -2,7 +2,10 @@
 import { AnimatePresence, motion, type PanInfo, type Variants } from 'framer-motion';
 import { useState } from 'react';
 import { CharacterSprite } from '../components/CharacterSprite';
-import { BackIcon } from '../components/Icons';
+import { CoinChip, Sparkles } from '../components/Coin';
+import { BackIcon, CoinIcon, LockIcon } from '../components/Icons';
+import { CLOUDEE_PRICE } from '../config/economy';
+import { hasCloudee, unlockCloudee, useWallet } from '../lib/wallet';
 import { CHARACTERS, type CharacterId } from '../data/characters';
 import { screenMotion } from '../lib/motion';
 import styles from './CharacterSelectScreen.module.css';
@@ -25,6 +28,21 @@ export function CharacterSelectScreen({ initialId, onBack, onConfirm }: Props) {
     0,
   ]);
   const current = CHARACTERS[index];
+  // 잠긴 Cloudee는 코인으로 해제한다
+  const wallet = useWallet();
+  // Cloudy는 MOODEE PRO 전용(결제 없음: 안내만). 친구 4명을 고르면 월드에서 만날 수 있다
+  // Pro가 아니면 프리미엄 잠금, Pro면 바로 고를 수 있다
+  const premium = !!current.premium && wallet.plan !== 'pro';
+  const [proNote, setProNote] = useState(false);
+  const locked = !current.premium && !hasCloudee(wallet, current);
+  const short = wallet.coins < CLOUDEE_PRICE;
+  const [justUnlocked, setJustUnlocked] = useState<string | null>(null);
+
+  const unlock = () => {
+    if (!unlockCloudee(current.id)) return;
+    setJustUnlocked(current.id);
+    window.setTimeout(() => setJustUnlocked(null), 1000);
+  };
 
   const go = (next: number) => {
     const n = (next + CHARACTERS.length) % CHARACTERS.length;
@@ -50,16 +68,16 @@ export function CharacterSelectScreen({ initialId, onBack, onConfirm }: Props) {
         <div className={styles.titles}>
           {/* 첫 실행(돌아갈 곳 없음)이면 앱 소개를 함께 보여줌 */}
           {onBack ? (
-            <span className={styles.eyebrow}>Your study buddy</span>
+            <span className={styles.eyebrow}>Your Cloudee</span>
           ) : (
             <>
-              <span className={styles.logo}>MOODEE</span>
+              <img className={styles.logo} src={`${import.meta.env.BASE_URL}assets/brand/logo.png`} alt="MOODEE" />
               <p className={styles.intro}>A cozy world for distracted minds.</p>
             </>
           )}
           <h1>Who's studying today?</h1>
         </div>
-        <span className={styles.spacer} />
+        <CoinChip className={styles.coinChip} />
       </header>
 
       <section className={styles.stage} aria-roledescription="carousel" aria-label="Characters">
@@ -85,7 +103,14 @@ export function CharacterSelectScreen({ initialId, onBack, onConfirm }: Props) {
               animate={{ y: [0, -6, 0] }}
               transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
             >
-              <CharacterSprite character={current} pose="front" />
+              <CharacterSprite character={current} pose="front" className={locked || premium ? styles.lockedSprite : ''} />
+              {current.premium && <span className={styles.proBadge}>MOODEE PRO</span>}
+              {(locked || premium) && (
+                <span className={`${styles.bigLock} ${premium ? styles.proLock : ''}`}>
+                  <LockIcon width={30} height={30} />
+                </span>
+              )}
+              {justUnlocked === current.id && <Sparkles count={14} />}
             </motion.div>
           </motion.div>
         </AnimatePresence>
@@ -108,7 +133,7 @@ export function CharacterSelectScreen({ initialId, onBack, onConfirm }: Props) {
             transition={{ duration: 0.18 }}
           >
             <h2>{current.name}</h2>
-            <p>{current.vibe}</p>
+            <p>{premium ? 'Locked — a premium Cloudee for MOODEE PRO members.' : locked ? 'Locked — unlock with coins you earn by studying.' : current.vibe}</p>
           </motion.div>
         </AnimatePresence>
       </div>
@@ -124,17 +149,46 @@ export function CharacterSelectScreen({ initialId, onBack, onConfirm }: Props) {
               className={`${styles.thumb} ${i === index ? styles.thumbOn : ''}`}
               onClick={() => go(i)}
             >
-              <CharacterSprite character={c} pose="front" className={styles.thumbSprite} style={{ height: '240%' }} />
+              <CharacterSprite character={c} pose="front" className={`${styles.thumbSprite} ${hasCloudee(wallet, c) ? '' : styles.lockedSprite}`} style={c.premium ? { height: '250%', top: '-112%' } : { height: '240%' }} />
+              {!hasCloudee(wallet, c) && (
+                <span className={styles.thumbLock}>
+                  <LockIcon width={11} height={11} />
+                </span>
+              )}
             </button>
           </li>
         ))}
       </ul>
 
       <div className={styles.dock}>
-        <button type="button" className="pill pill-primary" onClick={() => onConfirm(current.id)}>
-          Continue as {current.name}
-        </button>
+        {premium ? (
+          <button type="button" className={`pill pill-primary ${styles.proCta}`} onClick={() => setProNote(true)}>
+            <LockIcon width={18} height={18} /> Unlock with MOODEE PRO
+          </button>
+        ) : locked ? (
+          <button type="button" className="pill pill-primary" onClick={unlock} disabled={short}>
+            <CoinIcon /> {short ? `${CLOUDEE_PRICE} coins · study to earn` : `${CLOUDEE_PRICE} coins to unlock`}
+          </button>
+        ) : (
+          <button type="button" className="pill pill-primary" onClick={() => onConfirm(current.id)}>
+            Continue as {current.name}
+          </button>
+        )}
       </div>
+
+      <AnimatePresence>
+        {proNote && (
+          <motion.div className={styles.proBackdrop} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setProNote(false)}>
+            <motion.div className={styles.proModal} role="dialog" aria-modal="true" aria-label="MOODEE PRO" initial={{ scale: 0.9, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0 }} onClick={(e) => e.stopPropagation()}>
+              <h2>Available with MOODEE PRO</h2>
+              <p>Cloudy is a paid Cloudee. No payment in this demo — bring 4 friends and Cloudy visits the world with you.</p>
+              <button type="button" className="pill pill-soft" onClick={() => setProNote(false)}>
+                Got it
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.main>
   );
 }

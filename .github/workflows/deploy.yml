@@ -1,5 +1,5 @@
 # main에 push하면 빌드해서 GitHub Pages로 배포
-name: Deploy demo
+name: Deploy MOODEE
 
 on:
   push:

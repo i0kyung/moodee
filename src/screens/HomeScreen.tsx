@@ -1,21 +1,27 @@
-// 홈: 장소 휠을 돌려 갈 곳을 고른다. Classroom만 열려 있고 나머지는 Coming soon
+// 홈: 장소 휠을 돌려 갈 곳을 고른다. 시선 순서는 장소 > 캐릭터 > 행동 버튼 > 브랜드
 import { AnimatePresence, motion } from 'framer-motion';
 import { useState } from 'react';
 import { CharacterSprite } from '../components/CharacterSprite';
-import { FlameIcon } from '../components/Icons';
+import { CoinIcon, FlameIcon } from '../components/Icons';
 import { PlaceWheel } from '../components/PlaceWheel';
 import { getCharacter, type CharacterId } from '../data/characters';
 import { PLACES, type Place } from '../data/places';
 import { loadValue, save } from '../lib/storage';
 import { screenMotion } from '../lib/motion';
 import { readStreak } from '../lib/streak';
+import { getCompanions } from '../lib/companions';
+import { useWallet } from '../lib/wallet';
 import styles from './HomeScreen.module.css';
 
 interface Props {
   characterId: CharacterId | null;
   onGo: (place: Place) => void;
   onChangeCharacter: () => void;
+  onRecords: () => void;
+  onMembership: () => void;
 }
+
+const logo = `${import.meta.env.BASE_URL}assets/brand/logo.png`;
 
 // 시간대 인사 + 이름 (예: "Good evening, Nier" / "Still up, Nier?")
 const greeting = (name: string) => {
@@ -25,7 +31,8 @@ const greeting = (name: string) => {
   return <>{word}, <b>{name}</b></>;
 };
 
-export function HomeScreen({ characterId, onGo, onChangeCharacter }: Props) {
+export function HomeScreen({ characterId, onGo, onChangeCharacter, onRecords, onMembership }: Props) {
+  const wallet = useWallet();
   const character = getCharacter(characterId);
   const streak = readStreak();
   const [index, setIndex] = useState(() => Math.max(0, PLACES.findIndex((p) => p.id === loadValue('lastPlace', 'classroom'))));
@@ -39,17 +46,26 @@ export function HomeScreen({ characterId, onGo, onChangeCharacter }: Props) {
   };
 
   const go = () => {
-    if (!place.available || going) return;
+    if (going) return;
     setGoing(true);
-    window.setTimeout(() => onGo(place), 2000);
+    window.setTimeout(() => onGo(place), 1200);
   };
 
   // 휠이 도는 중이거나 출발했을 때 "Going to …"
+  // 그 공간에 있는 친구 힌트(너무 많이 알려 주지 않는다)
+  const here = getCompanions(character.id).filter((c) => c.space === place.id);
+  const presence = here.length === 1 ? `${here[0].name} is here` : here.length > 1 ? `${here.length} friends here` : null;
+
   const status = going || walking ? `Going to ${place.name}…` : null;
 
   return (
     <motion.main className={`screen ${styles.home}`} {...screenMotion}>
       <div className={styles.sun} aria-hidden />
+      <span className={`${styles.cloud} ${styles.c1}`} aria-hidden />
+      <span className={`${styles.cloud} ${styles.c2}`} aria-hidden />
+      {[{ x: 12, y: 30 }, { x: 86, y: 24 }, { x: 70, y: 38 }].map((st, i) => (
+        <motion.i key={i} className={styles.star} style={{ left: `${st.x}%`, top: `${st.y}%` }} animate={{ opacity: [0.25, 0.9, 0.25], scale: [0.7, 1, 0.7] }} transition={{ duration: 2.6, repeat: Infinity, delay: i * 0.7 }} aria-hidden />
+      ))}
 
       <header className={styles.header}>
         <button type="button" className={styles.hello} onClick={onChangeCharacter} aria-label={`Studying as ${character.name}. Change character`}>
@@ -58,39 +74,42 @@ export function HomeScreen({ characterId, onGo, onChangeCharacter }: Props) {
           </span>
           <span>{greeting(character.name)}</span>
         </button>
-        <div className={styles.streak} aria-label={`${streak.count}-day focus streak`}>
-          <FlameIcon width={18} height={18} className={streak.count ? styles.flameOn : styles.flameOff} />
-          <b>{streak.count}</b>
-          <span>day{streak.count === 1 ? '' : 's'}</span>
+        <div className={styles.chips}>
+          <button type="button" className={styles.streak} onClick={onMembership} aria-label={`${wallet.coins} coins. Open membership`}>
+            <CoinIcon />
+            <b>{wallet.coins}</b>
+          </button>
+          <button type="button" className={styles.streak} onClick={onRecords} aria-label={`${streak.count}-day focus streak. Open records`}>
+            <FlameIcon width={18} height={18} className={streak.count ? styles.flameOn : styles.flameOff} />
+            <b>{streak.count}</b>
+          </button>
         </div>
       </header>
 
       <div className={styles.brand}>
-        <h1>MOODEE</h1>
-        <p>A cozy world for distracted minds.</p>
+        <h1>
+          <img src={logo} alt="MOODEE" />
+        </h1>
       </div>
 
       <div className={styles.info} aria-live="polite">
-        <AnimatePresence mode="wait" initial={false}>
-          {status ? (
-            <motion.p key="going" className={styles.going} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
-              {status}
-            </motion.p>
-          ) : (
-            <motion.div key={place.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
-              <span className={styles.eyebrow}>Where to today?</span>
-              <h2>{place.name}</h2>
-              <p>{place.available ? place.blurb : 'Still being decorated. Coming soon!'}</p>
-            </motion.div>
-          )}
+        <span className={styles.eyebrow}>Where to today?</span>
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.h2 key={place.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.22 }}>
+            {place.name}
+          </motion.h2>
         </AnimatePresence>
+        <p className={status ? styles.going : ''}>{status ?? place.blurb}</p>
+        <small className={styles.presence} style={{ visibility: presence && !status ? 'visible' : 'hidden' }}>
+          {presence ?? '·'}
+        </small>
       </div>
 
       <PlaceWheel places={PLACES} character={character} index={index} onIndexChange={changeIndex} going={going} onWalkingChange={setWalking} />
 
       <div className={styles.dock}>
-        <button type="button" className={`pill ${place.available ? 'pill-primary' : styles.locked}`} onClick={go} disabled={!place.available || going}>
-          {place.available ? (going ? 'On my way…' : `Go to ${place.name}`) : 'Coming soon'}
+        <button type="button" className="pill pill-primary" onClick={go} disabled={going}>
+          {going ? 'On my way…' : `Go to ${place.name}`}
         </button>
         <p className={styles.tip}>Drag the wheel or tap a place</p>
       </div>
