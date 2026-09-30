@@ -1,0 +1,125 @@
+/* 휠 영역: 화면 하단, 원의 58%쯤이 보이도록(치수 변수는 홈 화면에서 받음) */
+.wheelArea {
+  --walker: calc(var(--icon) * 0.95);
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--disc) * -0.42);
+  width: var(--disc);
+  height: var(--disc);
+  translate: -50% 0;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+.wheelArea:active {
+  cursor: grabbing;
+}
+
+.disc {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  /* 휠 색 #F2E5DA. 배경 크림색과 비슷해서 윗면 하이라이트·윤곽선·그림자로 둥근 형태를 살림 */
+  background: radial-gradient(circle at 50% 18%, #fbf3ec 0%, #f2e5da 42%, #e9d8ca 100%);
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -24px 40px rgba(190, 160, 140, 0.18),
+    0 0 0 1.5px rgba(160, 130, 110, 0.18),
+    0 -12px 36px rgba(150, 120, 170, 0.22);
+}
+
+.ring {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+}
+
+/* 각 장소: 원 중심에서 회전 후 바깥으로 밀어냄(휠 접선 방향으로 기울어짐) */
+.slot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  transform-origin: 0 0;
+}
+.iconWrap {
+  position: absolute;
+  left: calc(var(--icon) / -2);
+  top: calc(var(--icon) / -2);
+  width: var(--icon);
+  transition: scale 0.2s;
+}
+.icon {
+  width: 100%;
+  height: auto;
+  display: block;
+  pointer-events: auto;
+  filter: drop-shadow(0 10px 12px rgba(46, 42, 42, 0.25));
+}
+.soon {
+  position: absolute;
+  left: 50%;
+  bottom: -2px;
+  translate: -50% 0;
+  white-space: nowrap;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(46, 42, 42, 0.75);
+}
+
+/* 캐릭터: 맨 위 장소 앞 길(아이콘 발판 앞쪽)에 서서 건물을 향해 걷는 크기 */
+.walker {
+  position: absolute;
+  left: 50%;
+  bottom: calc(50% + var(--orbit) - var(--icon) * 0.3 - var(--walker) * 0.22);
+  height: var(--walker);
+  aspect-ratio: 400 / 1086;
+  translate: -50% 0;
+  pointer-events: none;
+  z-index: 20;
+}
+.walker > div {
+  height: 100%;
+  transform-origin: 50% 78%;
+}
+.shadow {
+  position: absolute;
+  left: 50%;
+  top: 78%;
+  width: 50%;
+  height: 4%;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: rgba(60, 40, 40, 0.22);
+  filter: blur(2px);
+}
+.idle {
+  animation: breathe 3s ease-in-out infinite;
+}
+.walking {
+  animation: waddle 0.3s ease-in-out infinite alternate;
+}
+@keyframes waddle {
+  from {
+    transform: translateY(0) rotate(-4deg);
+  }
+  to {
+    transform: translateY(-5%) rotate(4deg);
+  }
+}
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(1.015);
+  }
+}

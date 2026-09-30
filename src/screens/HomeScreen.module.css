@@ -1,0 +1,171 @@
+.home {
+  /* 휠 치수: PlaceWheel과 설명 영역이 같은 값을 공유 */
+  --disc: min(100vw, 410px);
+  --orbit: calc(var(--disc) / 2 + 22px);
+  --icon: min(40vw, 160px);
+  background: linear-gradient(180deg, #ddd0ee 0%, #e8def2 40%, var(--cream) 72%);
+  overflow: hidden;
+}
+
+/* 오후 햇살 */
+.sun {
+  position: absolute;
+  top: -120px;
+  right: -110px;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(242, 196, 107, 0.55) 0%, rgba(242, 196, 107, 0) 68%);
+  pointer-events: none;
+}
+
+.header {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: calc(var(--safe-top) + 18px) 20px 0;
+}
+
+.hello {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-weight: 700;
+  color: #6f6474;
+  text-align: left;
+}
+.hello b {
+  color: var(--charcoal);
+}
+
+.avatar {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--card-strong);
+  box-shadow: var(--shadow-soft);
+  position: relative;
+}
+/* 앞모습 컷에서 얼굴 부분만 보이도록 확대 */
+.avatarSprite {
+  position: absolute;
+  left: 50%;
+  top: -40%;
+  transform: translateX(-50%);
+}
+
+.streak {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px 8px 10px;
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow: var(--shadow-soft);
+  font-size: 14px;
+  color: #6f6474;
+}
+.streak b {
+  color: var(--charcoal);
+  font-size: 16px;
+  font-weight: 900;
+}
+.flameOn {
+  color: var(--sunset);
+}
+.flameOff {
+  color: #cfc7c0;
+}
+
+.brand {
+  position: relative;
+  z-index: 2;
+  padding: 16px 20px 0;
+}
+.brand h1 {
+  margin: 0 0 2px;
+  font-size: 40px;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+.brand p {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--warm-gray);
+}
+
+/* 브랜드와 휠 위 건물 사이 남는 공간의 가운데에 장소 설명을 둠 */
+.info {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 8px 28px calc(var(--disc) * 0.08 + var(--orbit) + var(--icon) * 0.34 + 8px);
+  text-align: center;
+}
+.eyebrow {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lavender-deep);
+}
+.info h2 {
+  margin: 2px 0 4px;
+  font-size: 30px;
+  font-weight: 900;
+}
+.info p {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--warm-gray);
+  line-height: 1.35;
+}
+.info .going {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--charcoal);
+}
+
+/* 버튼은 휠 위, 엄지 영역 */
+.dock {
+  position: absolute;
+  z-index: 30;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0 24px calc(var(--safe-bottom) + 14px);
+  text-align: center;
+  pointer-events: none;
+}
+.dock > * {
+  pointer-events: auto;
+}
+.dock :global(.pill) {
+  width: min(100%, 300px);
+}
+.locked {
+  color: var(--warm-gray);
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: inset 0 0 0 1.5px rgba(154, 149, 144, 0.3);
+  cursor: default;
+}
+.tip {
+  margin: 8px 0 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--warm-gray);
+}
