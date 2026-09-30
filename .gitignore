@@ -3,3 +3,4 @@ dist
 *.tsbuildinfo
 .env.local
 .env.*.local
+supabase/functions/.env
