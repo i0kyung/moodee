@@ -1,12 +1,3 @@
-.label {
-  margin: 12px 2px 8px;
-  font-size: 14px;
-  font-weight: 900;
-}
-.label:first-of-type {
-  margin-top: 0;
-}
-
 .chips {
   display: flex;
   flex-wrap: wrap;
@@ -32,28 +23,23 @@
   background: var(--charcoal);
 }
 
-.input {
+.start {
   width: 100%;
-  height: 46px;
-  margin-top: 10px;
-  padding: 0 16px;
-  border: 2px solid rgba(46, 42, 42, 0.08);
-  border-radius: 16px;
-  background: #fff;
-  font: inherit;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--charcoal);
+  margin-top: 16px;
 }
-.input::placeholder {
-  color: #b9b2ab;
-  font-weight: 600;
-}
-
-.note {
-  margin: 8px 0 0;
-  text-align: center;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--warm-gray);
-}
+.start:disabled { opacity: .55; cursor: not-allowed; }
+.heading { margin: 20px 2px 12px; font-size: 17px; color: var(--charcoal); }
+.agenda { margin-bottom: 14px; }
+.agendaHeading { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 0 2px 8px; color: #635869; font-size: 13px; font-weight: 800; }
+.agendaHeading small { color: #9b929c; font-size: 12px; }
+.eventList { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.eventChoice { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; max-width: min(80vw, 250px); min-height: 48px; padding: 7px 10px; border: 2px solid transparent; border-radius: 14px; background: rgba(255,255,255,.8); color: var(--charcoal); text-align: left; }
+.eventOn { border-color: #ef9d64; background: #fff7ee; }
+.eventTime { font-size: 11px; font-weight: 800; white-space: nowrap; color: #b27b50; }
+.eventDetails { min-width: 0; display: flex; flex-direction: column; }
+.eventDetails b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.eventDetails small { color: #8c818d; font-size: 11px; }
+.input { display: block; width: 100%; min-height: 44px; margin-top: 12px; padding: 0 16px; border: 2px solid #ece9ef; border-radius: 16px; background: #fff; color: var(--charcoal); font: inherit; font-size: 15px; }
+.input:focus { outline: none; border-color: #ef9d64; }
+.input::placeholder { color: #b5afb5; }
+.note { margin: 10px 0 0; text-align: center; color: #9c9499; font-size: 12px; font-weight: 700; }

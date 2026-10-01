@@ -23,14 +23,16 @@ import { loadValue, save } from '../lib/storage';
 import { completeSession } from '../lib/streak';
 import { earn, markStampReady } from '../lib/wallet';
 import { screenMotion } from '../lib/motion';
-import type { SessionIntent } from '../lib/calendar';
+import { normalizeIntent } from '../lib/calendar';
 import styles from './ClassroomScreen.module.css';
 
 interface Props {
   characterId: CharacterId | null;
   onExit: () => void;
   onRecords: () => void;
-  intent: SessionIntent;
+  initialSubject?: string;
+  initialEventId?: string;
+  agendaDate?: string;
 }
 
 type Phase = 'explore' | 'sitting' | 'sounds' | 'plan' | 'focus';
@@ -53,7 +55,7 @@ const fmt = (ms: number) => {
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 };
 
-export function ClassroomScreen({ characterId, intent, onExit, onRecords }: Props) {
+export function ClassroomScreen({ characterId, initialSubject = '', initialEventId, agendaDate, onExit, onRecords }: Props) {
   const character = getCharacter(characterId);
   const { settings, playing, start, stop } = useSoundscape();
   const [phase, setPhase] = useState<Phase>('explore');
@@ -63,7 +65,7 @@ export function ClassroomScreen({ characterId, intent, onExit, onRecords }: Prop
 
   // ── 세션 계획 ──
   const [minutes, setMinutes] = useState(() => loadValue('focusMinutes', 25));
-  const [subject, setSubject] = useState(intent.text);
+  const [subject, setSubject] = useState(initialSubject);
 
   // ── 타이머 ──
   const [status, setStatus] = useState<TimerStatus>('running');
@@ -124,8 +126,10 @@ export function ClassroomScreen({ characterId, intent, onExit, onRecords }: Prop
   };
 
   const startFocus = async () => {
+    const intent = normalizeIntent(subject);
+    if (!intent) return;
+    setSubject(intent.text);
     save('focusMinutes', minutes);
-    save('lastSubject', subject);
     endAt.current = Date.now() + minutes * 60_000;
     setRemaining(minutes * 60_000);
     setStatus('running');
@@ -218,10 +222,10 @@ export function ClassroomScreen({ characterId, intent, onExit, onRecords }: Prop
         </div>
       </header>
 
-      <div className={styles.intentBadge} aria-label={`Session goal: ${subject}`}>
+      {phase === 'focus' && <div className={styles.intentBadge} aria-label={`Session goal: ${subject}`}>
         <span>MY ONE THING</span>
         <b>{subject}</b>
-      </div>
+      </div>}
 
       {/* 집중 중 HUD: 미니맵·소리 아이콘·데모 채팅 */}
       {phase === 'focus' && seat && !done && (
@@ -271,7 +275,7 @@ export function ClassroomScreen({ characterId, intent, onExit, onRecords }: Prop
         onStop={stop}
       />
       {/* ② 시간 + 무엇을 공부할지 */}
-      <SessionSheet open={phase === 'plan' && !done && !peopleOpen && !mixerOpen} minutes={minutes} subject={subject} onMinutes={setMinutes} onSubject={setSubject} onStart={startFocus} />
+      <SessionSheet open={phase === 'plan' && !done && !peopleOpen && !mixerOpen} minutes={minutes} subject={subject} initialEventId={initialEventId} agendaDate={agendaDate} onMinutes={setMinutes} onSubject={setSubject} onStart={startFocus} />
 
       <SoundMixer open={mixerOpen} onClose={() => setMixerOpen(false)} playing={playing} onPlay={start} onStop={stop} />
       <PeopleSheet open={peopleOpen} onClose={() => setPeopleOpen(false)} me={character} mySubject={phase === 'focus' ? subject : undefined} />

@@ -15,7 +15,7 @@ it('creates a guest plan and offers its goal for a session', async () => {
   fireEvent.click(screen.getByRole('button', { name: /save plan/i }));
   await waitFor(() => expect(guestPlans.list()).toHaveLength(1));
   fireEvent.click(screen.getByRole('button', { name: /start read chapter 4/i }));
-  expect(onStart).toHaveBeenCalledWith('Read chapter 4', expect.any(String));
+  expect(onStart).toHaveBeenCalledWith('Read chapter 4', expect.any(String), localDate(new Date()));
 });
 
 it('moves between weeks and shows plans on the selected day', async () => {

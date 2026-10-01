@@ -18,6 +18,13 @@ export const BackIcon = (p: SVGProps<SVGSVGElement>) => (
   <svg {...base(p)}><path d="M15 18l-6-6 6-6" /></svg>
 );
 
+export const CalendarIcon = (p: SVGProps<SVGSVGElement>) => (
+  <svg {...base(p)}>
+    <rect x="3" y="5" width="18" height="16" rx="3" />
+    <path d="M7 3v4M17 3v4M3 10h18M8 14h2M14 14h2M8 17h2" />
+  </svg>
+);
+
 export const SoundIcon = (p: SVGProps<SVGSVGElement>) => (
   <svg {...base(p)}>
     <path d="M4 10v4h4l5 4V6L8 10H4z" fill="currentColor" stroke="none" />

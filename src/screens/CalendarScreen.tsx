@@ -11,7 +11,7 @@ interface Props {
   initialMessage?: string;
   connectionRevision?: number;
   onBack: () => void;
-  onStart: (title: string, eventId: string) => void;
+  onStart: (title: string, eventId: string, date: string) => void;
 }
 
 type FormState = { title: string; date: string; time: string; durationMinutes: number; reminderMinutes: ReminderMinutes };
@@ -252,7 +252,7 @@ export function CalendarScreen({ initialMessage = '', connectionRevision = 0, on
           {events.map((event) => <article className={styles.event} key={`${event.calendarId}:${event.id}`}>
             <div className={styles.eventTime}>{formatTime(event.startsAt)}</div>
             <div className={styles.eventBody}><span className={styles.eventSource}>{event.calendarName}{event.calendarId === 'local' ? ' · local' : ''}</span><h3>{event.title}</h3><p>{event.calendarId === 'local' ? guestReminder(event, now) : event.readOnly ? 'From Google Calendar · read only' : event.reminderMinutes === null ? 'Reminder off' : `Popup + email · ${event.reminderMinutes} min before`}</p>
-              <div className={styles.eventActions}><button type="button" onClick={() => onStart(event.title, event.id)} aria-label={`Start ${event.title}`}>Use as one thing ↗</button>{!event.readOnly && !offline && <button type="button" onClick={() => openEdit(event)} aria-label={`Edit ${event.title}`}>Edit</button>}</div>
+              <div className={styles.eventActions}><button type="button" onClick={() => onStart(event.title, event.id, eventDate(event.startsAt))} aria-label={`Start ${event.title}`}>Use as one thing ↗</button>{!event.readOnly && !offline && <button type="button" onClick={() => openEdit(event)} aria-label={`Edit ${event.title}`}>Edit</button>}</div>
             </div>
           </article>)}
         </div>
