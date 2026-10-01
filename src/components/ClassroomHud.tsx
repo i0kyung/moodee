@@ -15,6 +15,9 @@ interface Props {
   onMixer: () => void;
   raised: boolean; // 아래에 타이머 패널이 있을 때
   dimmed?: boolean; // 위에 노트 창이 떠 있을 때: 소리 버튼·채팅을 잠시 숨긴다
+  footerHeight?: number;
+  onTutor: () => void;
+  overlayRevision?: number;
 }
 
 const { width: W, height: H, top } = CLASSROOM;
@@ -31,11 +34,12 @@ const LATER = [
   { who: 'Luna', text: 'the sunlight is nice today' },
 ];
 
-export function ClassroomHud({ seat, soundOn, onToggleSound, onMixer, raised, dimmed = false }: Props) {
+export function ClassroomHud({ seat, soundOn, onToggleSound, onMixer, raised, dimmed = false, footerHeight = 0, onTutor, overlayRevision = 0 }: Props) {
   const [chatOpen, setChatOpen] = useState(false);
   const [messages, setMessages] = useState(SEED);
   const [draft, setDraft] = useState('');
   const list = useRef<HTMLUListElement>(null);
+  useEffect(() => { setChatOpen(false); }, [overlayRevision]);
 
   // 친구들의 말은 드물게만(두 번) 올라온다
   useEffect(() => {
@@ -75,7 +79,7 @@ export function ClassroomHud({ seat, soundOn, onToggleSound, onMixer, raised, di
       </motion.aside>
 
       {/* 소리 아이콘: 하나씩 켜고 끈다(믹서와 같은 채널) */}
-      <div className={`${styles.sounds} ${raised ? styles.raised : ''} ${dimmed ? styles.dimmed : ''}`} inert={dimmed} aria-hidden={dimmed || undefined} role="group" aria-label="Ambient sounds">
+      <div className={`${styles.sounds} ${raised ? styles.raised : ''} ${dimmed ? styles.dimmed : ''}`} style={footerHeight ? { bottom: footerHeight + 12 } : undefined} inert={dimmed} aria-hidden={dimmed || undefined} role="group" aria-label="Ambient sounds">
         {SOUNDS.map((s) => {
           const on = soundOn(s.id);
           return (
@@ -90,7 +94,7 @@ export function ClassroomHud({ seat, soundOn, onToggleSound, onMixer, raised, di
       </div>
 
       {/* 데모 채팅 */}
-      <div className={`${styles.chat} ${raised ? styles.raised : ''} ${dimmed ? styles.dimmed : ''}`} inert={dimmed} aria-hidden={dimmed || undefined}>
+      <div className={`${styles.chat} ${raised ? styles.raised : ''} ${dimmed ? styles.dimmed : ''}`} style={footerHeight ? { bottom: footerHeight + 12 } : undefined} inert={dimmed} aria-hidden={dimmed || undefined}>
         <AnimatePresence initial={false}>
           {chatOpen && (
             <motion.div className={styles.chatPanel} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}>
@@ -110,9 +114,9 @@ export function ClassroomHud({ seat, soundOn, onToggleSound, onMixer, raised, di
             </motion.div>
           )}
         </AnimatePresence>
-        <button type="button" className={styles.chatToggle} onClick={() => setChatOpen((o) => !o)} aria-expanded={chatOpen}>
+        <div className={styles.toggles}><button type="button" className={styles.chatToggle} onClick={onTutor}>Tutor</button><button type="button" className={styles.chatToggle} onClick={() => setChatOpen((o) => !o)} aria-expanded={chatOpen}>
           💬 {chatOpen ? 'Hide chat' : `Chat · ${messages.length}`}
-        </button>
+        </button></div>
       </div>
     </>
   );

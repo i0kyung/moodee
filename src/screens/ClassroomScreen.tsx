@@ -27,6 +27,7 @@ import { normalizeIntent } from '../lib/calendar';
 import styles from './ClassroomScreen.module.css';
 import { formatCountdown, type FocusMode } from '../lib/focusSession';
 import type { FocusSessionController } from '../lib/useFocusSession';
+import { TutorPanel } from '../components/TutorPanel';
 
 interface Props {
   characterId: CharacterId | null;
@@ -38,6 +39,8 @@ interface Props {
   visible: boolean;
   focusTimer: FocusSessionController;
   onEnd: () => void;
+  initialTutorOpen?: boolean;
+  tutorMessage?: string;
 }
 
 type Phase = 'explore' | 'sitting' | 'sounds' | 'plan' | 'focus';
@@ -54,13 +57,19 @@ interface Done {
 const coinsImg = `${import.meta.env.BASE_URL}assets/rewards/coins.png`;
 const FRICTION = ['Easy', 'Okay', 'So-so', 'Hard', 'Very hard'];
 
-export function ClassroomScreen({ characterId, initialSubject = '', initialEventId, agendaDate, onExit, onRecords, visible, focusTimer, onEnd }: Props) {
+export function ClassroomScreen({ characterId, initialSubject = '', initialEventId, agendaDate, onExit, onRecords, visible, focusTimer, onEnd, initialTutorOpen = false, tutorMessage = '' }: Props) {
   const character = getCharacter(characterId);
   const { settings, playing, start, stop } = useSoundscape();
   const [phase, setPhase] = useState<Phase>('explore');
   const [seat, setSeat] = useState<Seat | null>(null);
   const [mixerOpen, setMixerOpen] = useState(false);
   const [peopleOpen, setPeopleOpen] = useState(false);
+  const [tutorOpen, setTutorOpen] = useState(initialTutorOpen);
+  const [tutorRevision, setTutorRevision] = useState(0);
+  const [overlayRevision, setOverlayRevision] = useState(0);
+  const panelRef = useRef<HTMLElement>(null);
+  const [footerHeight, setFooterHeight] = useState(0);
+  const openTutor = () => { setThoughtOpen(false); setMixerOpen(false); setPeopleOpen(false); setOverlayRevision(n=>n+1); setTutorOpen(true); };
 
   // ── 세션 계획 ──
   const [minutes, setMinutes] = useState(() => loadValue('focusMinutes', 25));
@@ -132,10 +141,22 @@ export function ClassroomScreen({ characterId, initialSubject = '', initialEvent
 
   useEffect(() => {
     if (session?.stage !== 'complete') return;
+    setTutorOpen(false);setTutorRevision(n=>n+1);
     if (session.focusedMs >= 10_000) finish(session.focusedMs);
     else { setThoughtOpen(false); setPhase('plan'); }
     clear();
   }, [session, finish, clear]);
+
+  useEffect(() => { if(!visible) setTutorOpen(false); }, [visible]);
+  useEffect(() => {
+    const panel=panelRef.current;
+    if(!panel || phase!=='focus' || done) {setFooterHeight(0);return;}
+    const update=()=>setFooterHeight(panel.offsetHeight + 24);
+    update();
+    const observer=typeof ResizeObserver==='undefined'?null:new ResizeObserver(update);
+    observer?.observe(panel);window.addEventListener('resize',update);
+    return()=>{observer?.disconnect();window.removeEventListener('resize',update);};
+  }, [phase, done, takingBreak]);
 
   useEffect(() => {
     if (!visible || takingBreak) { stop(); setThoughtOpen(false); setMixerOpen(false); setPeopleOpen(false); }
@@ -246,13 +267,13 @@ export function ClassroomScreen({ characterId, initialSubject = '', initialEvent
 
       {/* 집중 중 HUD: 미니맵·소리 아이콘·데모 채팅 */}
       {phase === 'focus' && seat && !done && !takingBreak && (
-        <ClassroomHud dimmed={thoughtOpen} seat={seat} soundOn={(id) => playing && !muted && settings.sounds[id].on} onToggleSound={toggleSound} onMixer={() => setMixerOpen(true)} raised />
+        <ClassroomHud dimmed={thoughtOpen || tutorOpen} seat={seat} footerHeight={footerHeight} overlayRevision={overlayRevision} onTutor={openTutor} soundOn={(id) => playing && !muted && settings.sounds[id].on} onToggleSound={toggleSound} onMixer={() => setMixerOpen(true)} raised />
       )}
 
       {/* 집중 중: 남은 시간 + 지금 하는 것 */}
       <AnimatePresence>
         {phase === 'focus' && (
-          <motion.section className={`${styles.panel} ${thoughtOpen ? styles.dimmed : ''}`} inert={thoughtOpen} aria-hidden={thoughtOpen || undefined} aria-label="Focus timer" initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}>
+          <motion.section ref={panelRef} className={`${styles.panel} ${thoughtOpen ? styles.dimmed : ''}`} inert={thoughtOpen || tutorOpen} aria-hidden={thoughtOpen || tutorOpen || undefined} aria-label="Focus timer" initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}>
             <div className={styles.timerRow}>
               <div className={styles.ring} style={{ ['--p' as string]: progress }}>
                 <span className={styles.time}>{formatCountdown(remaining)}</span>
@@ -293,7 +314,10 @@ export function ClassroomScreen({ characterId, initialSubject = '', initialEvent
         onStop={stop}
       />
       {/* ② 시간 + 무엇을 공부할지 */}
-      <SessionSheet open={phase === 'plan' && !done && !peopleOpen && !mixerOpen} mode={mode} onMode={setMode} onClose={() => setPhase('explore')} minutes={minutes} subject={subject} initialEventId={initialEventId} agendaDate={agendaDate} onMinutes={setMinutes} onSubject={setSubject} onStart={startFocus} />
+      <SessionSheet open={phase === 'plan' && !done && !peopleOpen && !mixerOpen && !tutorOpen} mode={mode} onMode={setMode} onClose={() => setPhase('explore')} minutes={minutes} subject={subject} initialEventId={initialEventId} agendaDate={agendaDate} onMinutes={setMinutes} onSubject={setSubject} onStart={startFocus} />
+
+      {!done && (phase !== 'focus' || takingBreak) && <button type="button" className={styles.tutorButton} style={takingBreak && footerHeight ? {bottom:footerHeight+12}:undefined} onClick={openTutor}>Tutor</button>}
+      <TutorPanel open={tutorOpen && visible && !done} onClose={()=>setTutorOpen(false)} goal={subject} session={session} onPause={focusTimer.togglePause} resetRevision={tutorRevision} initialMessage={tutorMessage}/>
 
       <SoundMixer open={mixerOpen} onClose={() => setMixerOpen(false)} playing={playing} onPlay={start} onStop={stop} />
       <PeopleSheet open={peopleOpen} onClose={() => setPeopleOpen(false)} me={character} mySubject={phase === 'focus' ? subject : undefined} />

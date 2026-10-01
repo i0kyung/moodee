@@ -21,6 +21,7 @@ import { RecordsScreen } from './screens/RecordsScreen';
 import { CalendarScreen } from './screens/CalendarScreen';
 import { useFocusSession } from './lib/useFocusSession';
 import { BreakTimer, SessionExitDialog } from './components/SessionOverlays';
+import { exchangeOAuthSession, oauthDestination } from './lib/auth';
 
 type Screen = 'intro' | 'home' | 'companions' | 'select' | 'classroom' | 'cafe' | 'library' | 'museum' | 'my-room' | 'records' | 'membership' | 'calendar';
 
@@ -41,17 +42,26 @@ export function App() {
   const [classroomSuggestion, setClassroomSuggestion] = useState<{ text: string; eventId?: string; date?: string }>({ text: '' });
   const [calendarMessage, setCalendarMessage] = useState('');
   const [calendarConnectionRevision, setCalendarConnectionRevision] = useState(0);
+  const [tutorMessage,setTutorMessage]=useState('');
+  const [initialTutorOpen,setInitialTutorOpen]=useState(false);
 
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
+    const destination=query.get('oauth_destination')==='tutor' || oauthDestination()==='tutor'?'tutor':'calendar';
+    const returnToTutor=(message:string)=>{setTutorMessage(message);setInitialTutorOpen(true);setOnboarding(false);setScreen('classroom');};
     if (query.has('error')) {
       setCalendarMessage(query.get('error_description')?.slice(0, 200) || 'Google connection was cancelled.');
-      query.delete('error'); query.delete('error_description');
+      const errorMessage=query.get('error_description')?.slice(0,200)||'Google sign-in was cancelled.';
+      query.delete('error'); query.delete('error_description');query.delete('oauth_destination');
       window.history.replaceState({}, '', `${window.location.pathname}${query.size ? `?${query}` : ''}${window.location.hash}`);
-      setScreen('calendar');
+      if(destination==='tutor')returnToTutor(errorMessage);else setScreen('calendar');
       return;
     }
     if (!query.has('code')) return;
+    if(destination==='tutor'){
+      void exchangeOAuthSession().then(()=>returnToTutor('Google sign-in complete.')).catch(()=>returnToTutor('Google sign-in failed. Please try again.'));
+      return;
+    }
     void completeGoogleRedirect().then(() => {
       setCalendarMessage('Google Calendar connected.');
       setCalendarConnectionRevision((revision) => revision + 1);
@@ -127,7 +137,7 @@ export function App() {
             />
           )}
           {(screen === 'classroom' || focusTimer.session !== null) && (
-            <ClassroomScreen key="classroom" visible={screen === 'classroom'} focusTimer={focusTimer} characterId={characterId} initialSubject={classroomSuggestion.text} initialEventId={classroomSuggestion.eventId} agendaDate={classroomSuggestion.date} onExit={() => {
+            <ClassroomScreen key="classroom" initialTutorOpen={initialTutorOpen} tutorMessage={tutorMessage} visible={screen === 'classroom'} focusTimer={focusTimer} characterId={characterId} initialSubject={classroomSuggestion.text} initialEventId={classroomSuggestion.eventId} agendaDate={classroomSuggestion.date} onExit={() => {
               if (focusTimer.session?.stage === 'focus') setStopRequest('exit');
               else setScreen('home');
             }} onEnd={() => setStopRequest('stop')} onRecords={() => setScreen('records')} />

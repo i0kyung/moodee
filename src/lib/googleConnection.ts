@@ -1,53 +1,7 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { AgendaEvent, PlanInput } from './calendar';
-
-const url = import.meta.env.VITE_SUPABASE_URL;
-const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
-export const googleConfigured = Boolean(url && anonKey);
-
-// Supabase's OAuth exchange returns provider tokens in memory. The browser only
-// persists the Supabase session; Google tokens are sent once to the Edge Function.
-export function safeAuthStorage(storage: Storage): Storage {
-  return {
-    get length() { return storage.length; },
-    clear: () => storage.clear(),
-    key: (index) => storage.key(index),
-    getItem: (key) => storage.getItem(key),
-    removeItem: (key) => storage.removeItem(key),
-    setItem(key, value) {
-      try {
-        const parsed = JSON.parse(value) as Record<string, unknown>;
-        if (parsed && typeof parsed === 'object') {
-          delete parsed.provider_token;
-          delete parsed.provider_refresh_token;
-          storage.setItem(key, JSON.stringify(parsed));
-          return;
-        }
-      } catch { /* Other storage values pass through. */ }
-      storage.setItem(key, value);
-    },
-  };
-}
-
-function availableStorage(): Storage {
-  try { return window.localStorage; }
-  catch {
-    const values = new Map<string, string>();
-    return {
-      get length() { return values.size; },
-      clear: () => values.clear(),
-      key: (index) => [...values.keys()][index] ?? null,
-      getItem: (key) => values.get(key) ?? null,
-      removeItem: (key) => { values.delete(key); },
-      setItem: (key, value) => { values.set(key, value); },
-    };
-  }
-}
-
-export const supabase: SupabaseClient | null = googleConfigured
-  ? createClient(url, anonKey, {
-    auth: { flowType: 'pkce', detectSessionInUrl: false, storage: safeAuthStorage(availableStorage()), persistSession: true },
-  }) : null;
+import { supabase, supabaseUrl as url, supabasePublicKey as anonKey, authConfigured, beginGoogleOAuth, exchangeOAuthSession } from './auth';
+export { safeAuthStorage } from './auth';
+export const googleConfigured = authConfigured;
 
 export class CalendarRequestError extends Error {
   constructor(message: string, public code?: string) { super(message); }
@@ -57,7 +11,7 @@ export async function callCalendar<T>(action: string, data: Record<string, unkno
   if (!supabase) throw new CalendarRequestError('Google Calendar needs project configuration.', 'unconfigured');
   const { data: sessionData } = await supabase.auth.getSession();
   const session = sessionData.session;
-  if (!session) throw new CalendarRequestError('Connect Google Calendar first.', 'reconnect');
+  if (!session || session.user.is_anonymous) throw new CalendarRequestError('Connect Google Calendar first.', 'reconnect');
   let response: Response;
   try {
     response = await fetch(`${url}/functions/v1/calendar`, {
@@ -73,28 +27,13 @@ export async function callCalendar<T>(action: string, data: Record<string, unkno
 }
 
 export async function beginGoogleConnection() {
-  if (!supabase) throw new CalendarRequestError('Google Calendar needs project configuration.', 'unconfigured');
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      scopes: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.app.created',
-      redirectTo: `${window.location.origin}${window.location.pathname}`,
-      queryParams: { access_type: 'offline', prompt: 'consent' },
-    },
-  });
-  if (error) throw new CalendarRequestError(error.message);
+  await beginGoogleOAuth('calendar');
 }
 
 export async function completeGoogleRedirect(): Promise<boolean> {
-  if (!supabase) return false;
-  const address = new URL(window.location.href);
-  const code = address.searchParams.get('code');
-  if (!code) return false;
-  address.searchParams.delete('code');
-  window.history.replaceState({}, '', address.pathname + address.search + address.hash);
-  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-  if (error) throw new CalendarRequestError(error.message, 'reconnect');
-  const refresh = data.session?.provider_refresh_token;
+  const session = await exchangeOAuthSession();
+  if (!session) return false;
+  const refresh = session.provider_refresh_token;
   if (!refresh) throw new CalendarRequestError('Google did not grant offline access. Please reconnect and approve Calendar access.', 'reconnect');
   await callCalendar('connect', { providerRefreshToken: refresh });
   return true;
@@ -102,7 +41,7 @@ export async function completeGoogleRedirect(): Promise<boolean> {
 
 export async function currentAccountId(): Promise<string | null> {
   const { data } = await supabase?.auth.getSession() ?? { data: { session: null } };
-  return data.session?.user.id ?? null;
+  return data.session?.user.is_anonymous ? null : data.session?.user.id ?? null;
 }
 
 export async function connectionStatus(): Promise<{ connected: boolean; email: string | null }> {
@@ -136,5 +75,4 @@ export async function deleteGooglePlan(event: AgendaEvent): Promise<void> {
 
 export async function disconnectGoogle(): Promise<void> {
   await callCalendar('disconnect');
-  await supabase?.auth.signOut();
 }
