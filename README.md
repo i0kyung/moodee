@@ -91,10 +91,12 @@ npm run dev
 |---|---|
 | `npm run dev` | Start the app |
 | `npm run build` | Type-check and build to `dist/` |
+| `npm test` | Run calendar and Google sync tests |
 | `npm run assets` | Rebuild `public/assets/` from the original artwork (`2026글로벌해커톤/`) |
 | `npm run test:rules` | Test the Cloud Tiles pattern rules |
 
 Built with React, TypeScript, Vite, Framer Motion and the Web Audio API. Progress is saved in the browser (localStorage).
+The Calendar supports local guest plans and, when configured, a dedicated MOODEE Google Calendar with reminders. Setup for limited testers: [`docs/calendar-google-setup.md`](docs/calendar-google-setup.md). Classroom asks for a one-line goal before entry.
 Design notes: [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) · [`docs/ASSET_MAP.md`](docs/ASSET_MAP.md)
 
 <p align="center"><sub>MOODEE · 2026 Global Hackathon</sub></p>

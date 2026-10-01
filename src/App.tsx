@@ -1,11 +1,13 @@
 // 화면 흐름: (첫 실행) Character Select → Home(장소 휠) → Classroom 집중 루틴 / 다른 공간 둘러보기
 // 홈에서 Records(주제별 시간)와 Membership(코인·보상)으로 갈 수 있다
 import { AnimatePresence, MotionConfig } from 'framer-motion';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { LoadingSplash, pickSplash } from './components/LoadingSplash';
 import { type CharacterId } from './data/characters';
 import type { Place } from './data/places';
 import { loadValue, save } from './lib/storage';
+import { type SessionIntent } from './lib/calendar';
+import { completeGoogleRedirect } from './lib/googleConnection';
 import { HomeScreen } from './screens/HomeScreen';
 import { IntroScreen } from './screens/IntroScreen';
 import { CafeScreen } from './screens/CafeScreen';
@@ -17,8 +19,10 @@ import { ShopScreen } from './screens/ShopScreen';
 import { MuseumScreen } from './screens/MuseumScreen';
 import { RoomScreen } from './screens/RoomScreen';
 import { RecordsScreen } from './screens/RecordsScreen';
+import { CalendarScreen } from './screens/CalendarScreen';
+import { SessionIntentScreen } from './screens/SessionIntentScreen';
 
-type Screen = 'intro' | 'home' | 'companions' | 'select' | 'classroom' | 'cafe' | 'library' | 'museum' | 'my-room' | 'records' | 'membership';
+type Screen = 'intro' | 'home' | 'companions' | 'select' | 'classroom' | 'cafe' | 'library' | 'museum' | 'my-room' | 'records' | 'membership' | 'calendar' | 'intent';
 
 const SPLASH_SECONDS = 2.2;
 
@@ -29,6 +33,31 @@ export function App() {
   const [onboarding, setOnboarding] = useState(true);
   // Membership에서 뒤로 갈 곳(홈 또는 둘러보던 공간)
   const [membershipFrom, setMembershipFrom] = useState<Screen>('home');
+  const [intent, setIntent] = useState<SessionIntent | null>(null);
+  const [prefill, setPrefill] = useState<{ text: string; eventId?: string }>({ text: '' });
+  const [intentFrom, setIntentFrom] = useState<Screen>('home');
+  const [calendarMessage, setCalendarMessage] = useState('');
+  const [calendarConnectionRevision, setCalendarConnectionRevision] = useState(0);
+
+  useEffect(() => {
+    const query = new URLSearchParams(window.location.search);
+    if (query.has('error')) {
+      setCalendarMessage(query.get('error_description')?.slice(0, 200) || 'Google connection was cancelled.');
+      query.delete('error'); query.delete('error_description');
+      window.history.replaceState({}, '', `${window.location.pathname}${query.size ? `?${query}` : ''}${window.location.hash}`);
+      setScreen('calendar');
+      return;
+    }
+    if (!query.has('code')) return;
+    void completeGoogleRedirect().then(() => {
+      setCalendarMessage('Google Calendar connected.');
+      setCalendarConnectionRevision((revision) => revision + 1);
+      setScreen('calendar');
+    }).catch((error: unknown) => {
+      setCalendarMessage(error instanceof Error ? error.message : 'Could not connect Google Calendar.');
+      setScreen('calendar');
+    });
+  }, []);
 
   // 로딩 화면: 앱을 열 때와 장소로 이동할 때(그림은 매번 무작위 한 장)
   const [splash, setSplash] = useState<{ image: string; label: string } | null>(null);
@@ -45,9 +74,15 @@ export function App() {
     setScreen('home');
   };
 
+  const openIntent = (from: Screen, text = '', eventId?: string) => {
+    setPrefill({ text, eventId });
+    setIntentFrom(from);
+    setScreen('intent');
+  };
+
   const go = (p: Place) => {
     showSplash(`Going to ${p.name}…`, () => {
-      if (p.available) setScreen('classroom');
+      if (p.available) openIntent('home');
       else setScreen(p.id as Screen);
     });
   };
@@ -70,7 +105,14 @@ export function App() {
               onChangeCharacter={() => setScreen('select')}
               onRecords={() => setScreen('records')}
               onMembership={() => openMembership('home')}
+              onCalendar={() => setScreen('calendar')}
             />
+          )}
+          {screen === 'calendar' && (
+            <CalendarScreen key="calendar" initialMessage={calendarMessage} connectionRevision={calendarConnectionRevision} onBack={() => setScreen('home')} onStart={(text, eventId) => openIntent('calendar', text, eventId)} />
+          )}
+          {screen === 'intent' && (
+            <SessionIntentScreen key="intent" initialText={prefill.text} sourceEventId={prefill.eventId} onBack={() => setScreen(intentFrom)} onConfirm={(value) => { setIntent(value); setScreen('classroom'); }} />
           )}
           {screen === 'companions' && <CompanionSetupScreen key="companions" onBack={onboarding ? undefined : () => setScreen('home')} onDone={() => setScreen(onboarding ? 'select' : 'home')} />}
           {screen === 'intro' && <IntroScreen key="intro" onStart={() => setScreen('companions')} />}
@@ -85,14 +127,14 @@ export function App() {
             />
           )}
           {screen === 'classroom' && (
-            <ClassroomScreen key="classroom" characterId={characterId} onExit={() => setScreen('home')} onRecords={() => setScreen('records')} />
+            <ClassroomScreen key="classroom" characterId={characterId} intent={intent!} onExit={() => { setIntent(null); setScreen('home'); }} onRecords={() => { setIntent(null); setScreen('records'); }} />
           )}
           {screen === 'museum' && <MuseumScreen key="museum" characterId={characterId} onBack={() => setScreen('home')} />}
           {screen === 'my-room' && (
             <RoomScreen key="my-room" characterId={characterId} onBack={() => setScreen('home')} onMembership={() => openMembership('my-room')} onChangeCharacter={(id) => (setCharacterId(id), save('character', id))} />
           )}
-          {screen === 'records' && <RecordsScreen key="records" onBack={() => setScreen('home')} onStudy={() => setScreen('classroom')} />}
-          {screen === 'membership' && <ShopScreen key="membership" onBack={() => setScreen(membershipFrom)} onStudy={() => setScreen('classroom')} />}
+          {screen === 'records' && <RecordsScreen key="records" onBack={() => setScreen('home')} onStudy={() => openIntent('records')} />}
+          {screen === 'membership' && <ShopScreen key="membership" onBack={() => setScreen(membershipFrom)} onStudy={() => openIntent('membership')} />}
         </AnimatePresence>
         <AnimatePresence>{splash && <LoadingSplash key={splash.image} {...splash} duration={SPLASH_SECONDS - 0.3} />}</AnimatePresence>
       </div>

@@ -1,0 +1,2 @@
+[functions.calendar]
+verify_jwt = false

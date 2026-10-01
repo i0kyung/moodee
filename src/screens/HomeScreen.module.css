@@ -98,6 +98,12 @@
   padding: 14px 24px 0;
   text-align: center;
 }
+.brandRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
 .brand h1 {
   margin: 0;
   line-height: 0;
@@ -106,6 +112,30 @@
   width: 112px;
   height: auto;
   filter: drop-shadow(0 3px 6px rgba(90, 80, 150, 0.18));
+}
+.calendarButton {
+  position: absolute;
+  left: calc(50% + 66px);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: var(--card-strong);
+  box-shadow: var(--shadow-soft);
+  color: var(--charcoal);
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.dueDot {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--sunset);
 }
 
 /* 장소 정보: 화면 가운데 위쪽에 하나의 그룹. 이동 중에도 줄 구성이 같아 흔들리지 않음 */
