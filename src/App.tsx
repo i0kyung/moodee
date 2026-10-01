@@ -20,6 +20,7 @@ export function App() {
   const [intent, setIntent] = useState<SessionIntent | null>(null);
   const [prefill, setPrefill] = useState<{ text: string; eventId?: string }>({ text: '' });
   const [calendarMessage, setCalendarMessage] = useState('');
+  const [calendarConnectionRevision, setCalendarConnectionRevision] = useState(0);
 
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
@@ -33,6 +34,7 @@ export function App() {
     if (!query.has('code')) return;
     void completeGoogleRedirect().then(() => {
       setCalendarMessage('Google Calendar connected.');
+      setCalendarConnectionRevision((revision) => revision + 1);
       setScreen('calendar');
     }).catch((error: unknown) => {
       setCalendarMessage(error instanceof Error ? error.message : 'Could not connect Google Calendar.');
@@ -61,7 +63,7 @@ export function App() {
             />
           )}
           {screen === 'calendar' && (
-            <CalendarScreen key="calendar" initialMessage={calendarMessage} onBack={() => setScreen('home')} onStart={(text, eventId) => { setPrefill({ text, eventId }); setScreen('intent'); }} />
+            <CalendarScreen key="calendar" initialMessage={calendarMessage} connectionRevision={calendarConnectionRevision} onBack={() => setScreen('home')} onStart={(text, eventId) => { setPrefill({ text, eventId }); setScreen('intent'); }} />
           )}
           {screen === 'intent' && (
             <SessionIntentScreen key="intent" initialText={prefill.text} sourceEventId={prefill.eventId} onBack={() => setScreen(prefill.eventId ? 'calendar' : 'home')} onConfirm={(value) => { setIntent(value); setScreen('classroom'); }} />

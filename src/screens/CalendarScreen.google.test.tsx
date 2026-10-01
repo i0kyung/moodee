@@ -2,7 +2,7 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { CalendarScreen } from './CalendarScreen';
-import { currentAccountId, listGoogleAgenda } from '../lib/googleConnection';
+import { connectionStatus, currentAccountId, listGoogleAgenda } from '../lib/googleConnection';
 import { getWeekDays, localDate } from '../lib/calendar';
 import { save } from '../lib/storage';
 
@@ -15,10 +15,34 @@ vi.mock('../lib/googleConnection', () => ({
 
 beforeEach(() => {
   localStorage.clear();
+  vi.clearAllMocks();
   vi.mocked(currentAccountId).mockResolvedValue('user-a');
+  vi.mocked(connectionStatus).mockResolvedValue({ connected: true, email: 'student@example.com' });
   vi.mocked(listGoogleAgenda).mockResolvedValue([{ id: 'external', calendarId: 'personal', calendarName: 'Personal', title: 'Seminar notes', startsAt: new Date(new Date().setHours(10, 0, 0, 0)).toISOString(), endsAt: new Date(new Date().setHours(11, 0, 0, 0)).toISOString(), source: 'google', readOnly: true, etag: 'v1' }]);
 });
 afterEach(cleanup);
+
+it('updates the connection immediately when OAuth finishes after Calendar opens', async () => {
+  vi.mocked(connectionStatus)
+    .mockResolvedValueOnce({ connected: false, email: null })
+    .mockResolvedValue({ connected: true, email: 'student@example.com' });
+  const props = { onBack: () => {}, onStart: () => {} };
+  const { rerender } = render(<CalendarScreen {...props} connectionRevision={0} />);
+  await waitFor(() => expect(connectionStatus).toHaveBeenCalledTimes(1));
+  rerender(<CalendarScreen {...props} connectionRevision={1} />);
+  await waitFor(() => expect(screen.getByText('Google Calendar connected')).toBeTruthy());
+  expect(screen.getByText('student@example.com')).toBeTruthy();
+});
+
+it('shows a checking state instead of Connect while account status is loading', async () => {
+  let finishStatus!: (status: { connected: boolean; email: string | null }) => void;
+  vi.mocked(connectionStatus).mockImplementationOnce(() => new Promise((resolve) => { finishStatus = resolve; }));
+  render(<CalendarScreen onBack={() => {}} onStart={() => {}} />);
+  await waitFor(() => expect(screen.getByText('Checking Google Calendar…')).toBeTruthy());
+  expect(screen.queryByRole('button', { name: 'Connect' })).toBeNull();
+  finishStatus({ connected: true, email: 'student@example.com' });
+  await waitFor(() => expect(screen.getByText('Google Calendar connected')).toBeTruthy());
+});
 
 it('offers a read-only Google event as a session goal without offering edit', async () => {
   const onStart = vi.fn();

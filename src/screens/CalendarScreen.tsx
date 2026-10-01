@@ -9,6 +9,7 @@ import styles from './CalendarScreen.module.css';
 
 interface Props {
   initialMessage?: string;
+  connectionRevision?: number;
   onBack: () => void;
   onStart: (title: string, eventId: string) => void;
 }
@@ -56,12 +57,13 @@ function weekTitle(days: Date[]): string {
   return `${firstPart} – ${last.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}`;
 }
 
-export function CalendarScreen({ initialMessage = '', onBack, onStart }: Props) {
+export function CalendarScreen({ initialMessage = '', connectionRevision = 0, onBack, onStart }: Props) {
   const [week, setWeek] = useState(() => getWeekDays(new Date())[0]);
   const [selectedDate, setSelectedDate] = useState(() => localDate(new Date()));
   const [localPlans, setLocalPlans] = useState(guestPlans.list);
   const [remoteEvents, setRemoteEvents] = useState<AgendaEvent[]>([]);
   const [connected, setConnected] = useState(false);
+  const [checkingConnection, setCheckingConnection] = useState(googleConfigured);
   const [email, setEmail] = useState<string | null>(null);
   const [accountId, setAccountId] = useState<string | null>(null);
   const [offline, setOffline] = useState(false);
@@ -92,9 +94,17 @@ export function CalendarScreen({ initialMessage = '', onBack, onStart }: Props) 
 
   useEffect(() => {
     let active = true;
+    setCheckingConnection(true);
     (async () => {
       const id = await currentAccountId();
-      if (!active || !id) return;
+      if (!active) return;
+      if (!id) {
+        setAccountId(null);
+        setConnected(false);
+        setEmail(null);
+        setCheckingConnection(false);
+        return;
+      }
       setAccountId(id);
       try {
         const status = await connectionStatus();
@@ -109,10 +119,12 @@ export function CalendarScreen({ initialMessage = '', onBack, onStart }: Props) 
         setEmail(cached.email);
         setOffline(true);
         setMessage(error instanceof Error ? error.message : 'Calendar is unavailable.');
+      } finally {
+        if (active) setCheckingConnection(false);
       }
     })();
     return () => { active = false; };
-  }, []);
+  }, [connectionRevision]);
 
   useEffect(() => {
     if (!connected || !accountId) return;
@@ -223,7 +235,8 @@ export function CalendarScreen({ initialMessage = '', onBack, onStart }: Props) 
       </header>
       <div className={styles.scroll}>
         <section className={styles.connection} aria-label="Google Calendar connection">
-          {connected ? <><div><b>Google Calendar connected</b><span>{email}</span></div><button type="button" onClick={() => void disconnect()} disabled={busy}>Disconnect</button></>
+          {checkingConnection ? <><div><b>Checking Google Calendar…</b><span>Getting your connection ready.</span></div><button type="button" disabled>Checking…</button></>
+            : connected ? <><div><b>Google Calendar connected</b><span>{email}</span></div><button type="button" onClick={() => void disconnect()} disabled={busy}>Disconnect</button></>
             : <><div><b>Plans on this device</b><span>Connect Google for reminders outside MOODEE.</span></div><button type="button" onClick={() => void beginGoogleConnection().catch((error) => setMessage(error.message))} disabled={!googleConfigured}>{googleConfigured ? 'Connect' : 'Setup needed'}</button></>}
         </section>
         {connected && upcomingGuestCount > 0 && <section className={styles.migration}><b>Bring your plans along?</b><p>{upcomingGuestCount} upcoming plan{upcomingGuestCount === 1 ? '' : 's'} on this device can move to Google Calendar.</p><button type="button" onClick={() => void migrate()} disabled={busy || offline}>Move upcoming plans</button></section>}
