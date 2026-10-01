@@ -19,7 +19,22 @@ Google dapat membuat refresh token untuk aplikasi External dalam mode Testing ke
 3. Jalankan migrasi [`202609300001_google_calendar_connections.sql`](../supabase/migrations/202609300001_google_calendar_connections.sql) melalui Supabase CLI (`supabase db push`) atau SQL Editor. Tabel berisi ID kalender dan refresh token terenkripsi, memiliki RLS aktif tanpa policy klien, dan akses `anon`/`authenticated` dicabut.
 4. Buat kunci enkripsi acak 32 byte berbentuk Base64. Contoh lokal: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. Simpan nilainya di **Supabase Dashboard → Edge Functions → Secrets**, dengan nama `GOOGLE_TOKEN_ENCRYPTION_KEY`, atau gunakan `supabase secrets set GOOGLE_TOKEN_ENCRYPTION_KEY=<nilai>`. Jangan mengubahnya setelah akun terhubung tanpa migrasi token, sebab token lama tak dapat didekripsi.
 5. Set Edge Function secrets: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_TOKEN_ENCRYPTION_KEY`, dan `APP_ORIGINS`. Isi `APP_ORIGINS` dengan daftar origin dipisahkan koma, misalnya `https://i0kyung.github.io,http://localhost:5173` (tanpa `/moodie/`). `SUPABASE_URL` dan `SUPABASE_SERVICE_ROLE_KEY` disediakan lingkungan Supabase Functions. Jangan menaruh service role key di frontend.
-6. Deploy fungsi [`calendar`](../supabase/functions/calendar/index.ts), misalnya `supabase functions deploy calendar --no-verify-jwt`. Fungsi tetap memvalidasi JWT Supabase sendiri lewat `auth.getUser`, sehingga preflight CORS dapat dilayani. Pastikan `supabase/config.toml` ikut dipakai.
+6. Deploy fungsi [`calendar`](../supabase/functions/calendar/index.ts) dengan langkah CLI di bawah. Fungsi tetap memvalidasi JWT Supabase sendiri lewat `auth.getUser`, sehingga preflight CORS dapat dilayani.
+
+### Deploy fungsi `calendar` dari PowerShell
+
+Jalankan perintah berikut dari folder root repo (`moodie`). CLI Supabase sudah terpasang sebagai dev dependency; gunakan `npx supabase`:
+
+```powershell
+npm install
+npx supabase login
+npx supabase link --project-ref YOUR_PROJECT_REF
+npx supabase db push
+npx supabase secrets list
+npx supabase functions deploy calendar --no-verify-jwt --use-api
+```
+
+Ganti `YOUR_PROJECT_REF` dengan ID project dari URL dashboard `https://supabase.com/dashboard/project/YOUR_PROJECT_REF`. Periksa ID sebelum `db push`, karena perintah itu menerapkan migrasi ke database project yang terhubung. Bila migrasi SQL sudah dijalankan lewat SQL Editor, lewati `db push`. Pastikan keempat secret pada langkah 5 muncul di `secrets list` sebelum deploy; daftar itu menampilkan nama secret, bukan nilainya. Opsi `--use-api` melakukan bundling tanpa Docker. Setelah berhasil, fungsi tersedia di `https://YOUR_PROJECT_REF.supabase.co/functions/v1/calendar`. Untuk pengujian, buka aplikasi dan gunakan tombol **Connect**; pemanggilan `calendar` tanpa sesi Supabase akan ditolak oleh fungsi.
 
 Untuk frontend lokal, salin [`.env.example`](../.env.example) menjadi `.env.local` dan isi **hanya** `VITE_SUPABASE_URL` dan publishable/anon key. Jalankan `npm run dev`. Untuk **Edge Function lokal** (`supabase start` atau `supabase functions serve`), buat file terpisah `supabase/functions/.env` berisi `GOOGLE_TOKEN_ENCRYPTION_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, dan `APP_ORIGINS`. File tersebut diabaikan Git. Dua nilai `VITE_` memang publik; kredensial Google dan service role key tidak boleh menggunakan prefiks `VITE_`.
 
