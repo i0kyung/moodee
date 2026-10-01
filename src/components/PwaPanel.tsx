@@ -17,22 +17,22 @@ export function PwaPanel({open,onClose,active,notifications:n}:Props) {
     window.addEventListener('beforeinstallprompt',install);window.addEventListener('appinstalled',done);window.addEventListener('moodee:pwa-update',refreshed);
     return()=>{window.removeEventListener('beforeinstallprompt',install);window.removeEventListener('appinstalled',done);window.removeEventListener('moodee:pwa-update',refreshed);};
   },[]);
-  return <div className={styles.layer} style={{pointerEvents:open?'auto':'none'}}><Sheet open={open} onClose={onClose} title="Take MOODEE with you" subtitle="A little space on your home screen." action={<button className={styles.close} onClick={onClose} aria-label="Close app settings">×</button>}>
+  return <div className={styles.layer} style={{pointerEvents:open?'auto':'none'}}><Sheet open={open} onClose={onClose} title="Take MOODEE with you" action={<button className={styles.close} onClick={onClose} aria-label="Close app settings">×</button>}>
     <ScrollArea className={styles.scroll}><div className={styles.content}>
-      <section className={styles.card}><span className={styles.eyebrow}>YOUR COZY APP</span><h3>{installed?'MOODEE is installed':'Add to your home screen'}</h3>
-        <p>{installed?'Open MOODEE from its icon whenever you need a little focus.':iosDevice()?'In Safari, tap Share → Add to Home Screen → Add. Then open MOODEE from its new icon.':'Install MOODEE for an app window of its own. You can also use your browser’s Install app or Add to Home Screen menu.'}</p>
+      <section className={styles.card}><h3>{installed?'MOODEE is installed':'Add to your home screen'}</h3>
+        <p>{installed?'Open MOODEE from your home screen.':iosDevice()?'Safari → Share → Add to Home Screen → Add. Then open the new icon.':'Use your browser’s Install app or Add to Home Screen menu.'}</p>
         {!installed && prompt && <button className="pill pill-primary" onClick={async()=>{await prompt.prompt();await prompt.userChoice;setPrompt(null);}}>Install MOODEE</button>}
       </section>
-      <section className={styles.card}><span className={styles.eyebrow}>A GENTLE NUDGE</span><h3>Phone reminders {n.enabled?'· On':'· Off'}</h3>
-        <p>Get local study reminders, a focus-finished alert, and a reminder to return after a Pomodoro break—even when MOODEE is closed.</p>
-        <p className={styles.small}>Enabling reminders sends your local plan titles and timer deadlines to MOODEE’s server for delivery. Google plans use Google Calendar’s own reminders. No Google login is needed.</p>
-        <button className="pill pill-primary" disabled={n.busy} onClick={()=>void(n.enabled?n.disable():n.enable())}>{n.busy?'One moment…':n.enabled?'Turn off on this device':'Enable phone reminders'}</button>
+      <section className={styles.card}><h3>Phone reminders {n.enabled?'· On':'· Off'}</h3>
+        <p>Study reminders and focus / break alerts, even when MOODEE is closed.</p>
+        <p className={styles.small}>Enabling alerts sends plan titles and timer deadlines to MOODEE’s server. Google plans use Google Calendar reminders.</p>
+        <button className="pill pill-primary" disabled={n.busy} onClick={()=>void(n.enabled?n.disable():n.enable())}>{n.busy?'One moment…':n.enabled?'Turn off':'Enable reminders'}</button>
         {n.enabled && <div className={styles.actions}><button onClick={()=>void n.test()} disabled={n.busy}>Send test</button><button onClick={()=>void n.sync()} disabled={n.busy}>Sync reminders</button></div>}
         {(n.message||n.syncError) && <p role="status" className={styles.message}>{n.syncError||n.message}</p>}
-        <p className={styles.small}>Allow notifications on this device. iPhone needs iOS 16.4+ and installation to Home Screen. Delivery can be delayed by connection, battery saving, or Focus settings.</p>
+        <p className={styles.small}>{iosDevice()?'Requires iOS 16.4+ and Home Screen installation. ':''}Allow notifications when asked. Connection, battery saving, or Focus settings may delay alerts.</p>
       </section>
-      {update && <section className={styles.card}><h3>A fresh MOODEE is ready</h3><p>{active?'Finish your session to update. Your timer keeps its place.':'Update when you’re ready.'}</p><button className="pill pill-soft" disabled={active} onClick={()=>void applyUpdate()}>Update app</button></section>}
-      <p className={styles.small}>Visited rooms can reopen offline. Tutor, Google Calendar, and scheduling phone reminders need an internet connection.</p>
+      {update && <section className={styles.card}><h3>Update available</h3>{active && <p>Finish your session to update.</p>}<button className="pill pill-soft" disabled={active} onClick={()=>void applyUpdate()}>Update app</button></section>}
+      <p className={styles.small}>Tutor, Google Calendar, and reminder scheduling need internet.</p>
     </div></ScrollArea>
   </Sheet></div>;
 }
