@@ -231,7 +231,7 @@ export function ClassroomScreen({ characterId, initialSubject = '', initialEvent
           </motion.div>
         ) : (
           <motion.div key="explore" className={styles.layer} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.6 }}>
-            <SeatPicker character={character} onSit={sit} onPeople={() => setPeopleOpen(true)} />
+            <SeatPicker character={character} onSit={sit} onPeople={() => setPeopleOpen(true)} movementAction={<button type="button" className={`${styles.tutorButton} ${styles.tutorInControls}`} onClick={openTutor}>Tutor</button>} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -316,7 +316,7 @@ export function ClassroomScreen({ characterId, initialSubject = '', initialEvent
       {/* ② 시간 + 무엇을 공부할지 */}
       <SessionSheet open={phase === 'plan' && !done && !peopleOpen && !mixerOpen && !tutorOpen} mode={mode} onMode={setMode} onClose={() => setPhase('explore')} minutes={minutes} subject={subject} initialEventId={initialEventId} agendaDate={agendaDate} onMinutes={setMinutes} onSubject={setSubject} onStart={startFocus} />
 
-      {!done && (phase !== 'focus' || takingBreak) && <button type="button" className={styles.tutorButton} style={takingBreak && footerHeight ? {bottom:footerHeight+12}:undefined} onClick={openTutor}>Tutor</button>}
+      {!done && phase !== 'explore' && (phase !== 'focus' || takingBreak) && <button type="button" className={styles.tutorButton} style={takingBreak && footerHeight ? {bottom:footerHeight+12}:undefined} onClick={openTutor}>Tutor</button>}
       <TutorPanel open={tutorOpen && visible && !done} onClose={()=>setTutorOpen(false)} goal={subject} session={session} onPause={focusTimer.togglePause} resetRevision={tutorRevision} initialMessage={tutorMessage}/>
 
       <SoundMixer open={mixerOpen} onClose={() => setMixerOpen(false)} playing={playing} onPlay={start} onStop={stop} />

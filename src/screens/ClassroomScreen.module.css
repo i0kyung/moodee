@@ -140,6 +140,7 @@
   overflow: hidden;
 }
 .tutorButton { position: absolute; z-index: 2; left: 12px; bottom: calc(var(--safe-bottom) + 16px); min-height: 40px; padding: 0 18px; border-radius: 999px; background: rgba(46,38,40,.72); color: #fff; border: 1px solid rgba(255,255,255,.18); backdrop-filter: blur(10px); font-size: 13px; font-weight: 900; }
+.tutorInControls { position: static; }
 .hint {
   margin: 8px 2px 0;
   font-size: 13px;

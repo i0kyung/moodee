@@ -1,6 +1,6 @@
 // 교실 탑뷰 미니게임: 조이스틱·방향키·바닥 탭으로 걸어가 빈자리를 고른다
 import { motion } from 'framer-motion';
-import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode, type PointerEvent as ReactPointerEvent } from 'react';
 import type { Character, Pose } from '../data/characters';
 import { CLASSMATES, classmateLooks } from '../data/classmates';
 import { CLASSROOM, type Seat } from '../data/places';
@@ -15,6 +15,7 @@ interface Props {
   character: Character;
   onSit: (seat: Seat) => void;
   onPeople: () => void; // 앉아 있는 친구를 누르면 "같은 방 사람들" 열기
+  movementAction?: ReactNode;
 }
 
 const { width: W, height: H, top } = CLASSROOM;
@@ -25,7 +26,7 @@ const ZOOM = 1.25; // 창문(햇살이 들어오는 곳)이 화면 왼쪽에 걸
 type Dir = 'up' | 'down' | 'left' | 'right';
 const POSE_OF: Record<Dir, Pose> = { up: 'back', down: 'front', left: 'side', right: 'sideAlt' };
 
-export function SeatPicker({ character, onSit, onPeople }: Props) {
+export function SeatPicker({ character, onSit, onPeople, movementAction }: Props) {
   // 이미 친구가 앉아 있는 자리
   const looks = useMemo(() => classmateLooks(character.id), [character.id]);
   const taken = useMemo(() => new Map(CLASSMATES.map((m) => [m.topSeat, m])), []);
@@ -199,7 +200,10 @@ export function SeatPicker({ character, onSit, onPeople }: Props) {
       </div>
 
       <div className={styles.controls}>
-        <Joystick onChange={(v) => (stick.current = v)} />
+        <div className={styles.movementControls}>
+          {movementAction}
+          <Joystick onChange={(v) => (stick.current = v)} />
+        </div>
         <div className={styles.side}>
           {near ? (
             <motion.button
