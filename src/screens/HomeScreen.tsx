@@ -2,7 +2,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { CharacterSprite } from '../components/CharacterSprite';
-import { CoinIcon, FlameIcon } from '../components/Icons';
+import { CalendarIcon, CoinIcon, FlameIcon } from '../components/Icons';
 import { PlaceWheel } from '../components/PlaceWheel';
 import { getCharacter, type CharacterId } from '../data/characters';
 import { PLACES, type Place } from '../data/places';
@@ -97,12 +97,7 @@ export function HomeScreen({ characterId, onGo, onChangeCharacter, onRecords, on
       </header>
 
       <div className={styles.brand}>
-        <div className={styles.brandRow}>
-          <h1><img src={logo} alt="MOODEE" /></h1>
-          <button type="button" className={styles.calendarButton} onClick={onCalendar} aria-label={dueCount ? `Open Calendar, ${dueCount} local reminder${dueCount === 1 ? '' : 's'} due` : 'Open Calendar'}>
-            <span aria-hidden>▦</span> Calendar{dueCount > 0 && <i className={styles.dueDot} aria-hidden />}
-          </button>
-        </div>
+        <h1><img src={logo} alt="MOODEE" /></h1>
       </div>
 
       <div className={styles.info} aria-live="polite">
@@ -121,9 +116,16 @@ export function HomeScreen({ characterId, onGo, onChangeCharacter, onRecords, on
       <PlaceWheel places={PLACES} character={character} index={index} onIndexChange={changeIndex} going={going} onWalkingChange={setWalking} />
 
       <div className={styles.dock}>
-        <button type="button" className="pill pill-primary" onClick={go} disabled={going}>
-          {going ? 'On my way…' : `Go to ${place.name}`}
-        </button>
+        <div className={styles.dockActions}>
+          <button type="button" className="pill pill-primary" onClick={go} disabled={going}>
+            {going ? 'On my way…' : `Go to ${place.name}`}
+          </button>
+          <button type="button" className={`pill pill-soft ${styles.calendarButton}`} onClick={onCalendar} aria-label={dueCount ? `Open Calendar, ${dueCount} local reminder${dueCount === 1 ? '' : 's'} due` : 'Open Calendar'}>
+            <CalendarIcon width={20} height={20} />
+            <span>Calendar</span>
+            {dueCount > 0 && <i className={styles.dueDot} aria-hidden />}
+          </button>
+        </div>
         <p className={styles.tip}>Drag the wheel or tap a place</p>
       </div>
     </motion.main>

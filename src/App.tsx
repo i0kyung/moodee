@@ -6,7 +6,6 @@ import { LoadingSplash, pickSplash } from './components/LoadingSplash';
 import { type CharacterId } from './data/characters';
 import type { Place } from './data/places';
 import { loadValue, save } from './lib/storage';
-import { type SessionIntent } from './lib/calendar';
 import { completeGoogleRedirect } from './lib/googleConnection';
 import { HomeScreen } from './screens/HomeScreen';
 import { IntroScreen } from './screens/IntroScreen';
@@ -20,9 +19,8 @@ import { MuseumScreen } from './screens/MuseumScreen';
 import { RoomScreen } from './screens/RoomScreen';
 import { RecordsScreen } from './screens/RecordsScreen';
 import { CalendarScreen } from './screens/CalendarScreen';
-import { SessionIntentScreen } from './screens/SessionIntentScreen';
 
-type Screen = 'intro' | 'home' | 'companions' | 'select' | 'classroom' | 'cafe' | 'library' | 'museum' | 'my-room' | 'records' | 'membership' | 'calendar' | 'intent';
+type Screen = 'intro' | 'home' | 'companions' | 'select' | 'classroom' | 'cafe' | 'library' | 'museum' | 'my-room' | 'records' | 'membership' | 'calendar';
 
 const SPLASH_SECONDS = 2.2;
 
@@ -33,9 +31,7 @@ export function App() {
   const [onboarding, setOnboarding] = useState(true);
   // Membership에서 뒤로 갈 곳(홈 또는 둘러보던 공간)
   const [membershipFrom, setMembershipFrom] = useState<Screen>('home');
-  const [intent, setIntent] = useState<SessionIntent | null>(null);
-  const [prefill, setPrefill] = useState<{ text: string; eventId?: string }>({ text: '' });
-  const [intentFrom, setIntentFrom] = useState<Screen>('home');
+  const [classroomSuggestion, setClassroomSuggestion] = useState<{ text: string; eventId?: string; date?: string }>({ text: '' });
   const [calendarMessage, setCalendarMessage] = useState('');
   const [calendarConnectionRevision, setCalendarConnectionRevision] = useState(0);
 
@@ -74,15 +70,14 @@ export function App() {
     setScreen('home');
   };
 
-  const openIntent = (from: Screen, text = '', eventId?: string) => {
-    setPrefill({ text, eventId });
-    setIntentFrom(from);
-    setScreen('intent');
+  const openClassroom = (text = '', eventId?: string, date?: string) => {
+    setClassroomSuggestion({ text, eventId, date });
+    setScreen('classroom');
   };
 
   const go = (p: Place) => {
     showSplash(`Going to ${p.name}…`, () => {
-      if (p.available) openIntent('home');
+      if (p.available) openClassroom();
       else setScreen(p.id as Screen);
     });
   };
@@ -109,10 +104,7 @@ export function App() {
             />
           )}
           {screen === 'calendar' && (
-            <CalendarScreen key="calendar" initialMessage={calendarMessage} connectionRevision={calendarConnectionRevision} onBack={() => setScreen('home')} onStart={(text, eventId) => openIntent('calendar', text, eventId)} />
-          )}
-          {screen === 'intent' && (
-            <SessionIntentScreen key="intent" initialText={prefill.text} sourceEventId={prefill.eventId} onBack={() => setScreen(intentFrom)} onConfirm={(value) => { setIntent(value); setScreen('classroom'); }} />
+            <CalendarScreen key="calendar" initialMessage={calendarMessage} connectionRevision={calendarConnectionRevision} onBack={() => setScreen('home')} onStart={(text, eventId, date) => openClassroom(text, eventId, date)} />
           )}
           {screen === 'companions' && <CompanionSetupScreen key="companions" onBack={onboarding ? undefined : () => setScreen('home')} onDone={() => setScreen(onboarding ? 'select' : 'home')} />}
           {screen === 'intro' && <IntroScreen key="intro" onStart={() => setScreen('companions')} />}
@@ -127,14 +119,14 @@ export function App() {
             />
           )}
           {screen === 'classroom' && (
-            <ClassroomScreen key="classroom" characterId={characterId} intent={intent!} onExit={() => { setIntent(null); setScreen('home'); }} onRecords={() => { setIntent(null); setScreen('records'); }} />
+            <ClassroomScreen key="classroom" characterId={characterId} initialSubject={classroomSuggestion.text} initialEventId={classroomSuggestion.eventId} agendaDate={classroomSuggestion.date} onExit={() => setScreen('home')} onRecords={() => setScreen('records')} />
           )}
           {screen === 'museum' && <MuseumScreen key="museum" characterId={characterId} onBack={() => setScreen('home')} />}
           {screen === 'my-room' && (
             <RoomScreen key="my-room" characterId={characterId} onBack={() => setScreen('home')} onMembership={() => openMembership('my-room')} onChangeCharacter={(id) => (setCharacterId(id), save('character', id))} />
           )}
-          {screen === 'records' && <RecordsScreen key="records" onBack={() => setScreen('home')} onStudy={() => openIntent('records')} />}
-          {screen === 'membership' && <ShopScreen key="membership" onBack={() => setScreen(membershipFrom)} onStudy={() => openIntent('membership')} />}
+          {screen === 'records' && <RecordsScreen key="records" onBack={() => setScreen('home')} onStudy={() => openClassroom()} />}
+          {screen === 'membership' && <ShopScreen key="membership" onBack={() => setScreen(membershipFrom)} onStudy={() => openClassroom()} />}
         </AnimatePresence>
         <AnimatePresence>{splash && <LoadingSplash key={splash.image} {...splash} duration={SPLASH_SECONDS - 0.3} />}</AnimatePresence>
       </div>

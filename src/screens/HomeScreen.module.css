@@ -98,12 +98,6 @@
   padding: 14px 24px 0;
   text-align: center;
 }
-.brandRow {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
 .brand h1 {
   margin: 0;
   line-height: 0;
@@ -112,30 +106,6 @@
   width: 112px;
   height: auto;
   filter: drop-shadow(0 3px 6px rgba(90, 80, 150, 0.18));
-}
-.calendarButton {
-  position: absolute;
-  left: calc(50% + 66px);
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 8px 10px;
-  border-radius: 999px;
-  background: var(--card-strong);
-  box-shadow: var(--shadow-soft);
-  color: var(--charcoal);
-  font-size: 12px;
-  font-weight: 900;
-  white-space: nowrap;
-}
-.dueDot {
-  position: absolute;
-  top: 2px;
-  right: 4px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--sunset);
 }
 
 /* 장소 정보: 화면 가운데 위쪽에 하나의 그룹. 이동 중에도 줄 구성이 같아 흔들리지 않음 */
@@ -191,8 +161,42 @@
 .dock > * {
   pointer-events: auto;
 }
-.dock :global(.pill) {
-  width: min(100%, 300px);
+.dockActions {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 10px;
+  max-width: 360px;
+  margin: 0 auto;
+}
+.dockActions > :global(.pill-primary) {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  font-size: clamp(14px, 4.2cqw, 18px);
+}
+.calendarButton {
+  position: relative;
+  flex: none;
+  width: auto;
+  min-height: 60px;
+  padding: 0 15px;
+  color: var(--charcoal);
+  font-size: 14px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.calendarButton svg {
+  color: var(--lavender-deep);
+}
+.dueDot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--sunset);
 }
 .locked {
   color: var(--warm-gray);
@@ -296,4 +300,8 @@
     animation: none;
     left: 20px;
   }
+}
+@container (max-width: 350px) {
+  .calendarButton span { display: none; }
+  .calendarButton { width: 60px; padding: 0; }
 }

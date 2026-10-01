@@ -50,7 +50,7 @@ it('offers a read-only Google event as a session goal without offering edit', as
   await waitFor(() => expect(screen.getByText('Seminar notes')).toBeTruthy());
   expect(screen.queryByRole('button', { name: 'Edit Seminar notes' })).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Start Seminar notes' }));
-  expect(onStart).toHaveBeenCalledWith('Seminar notes', 'external');
+  expect(onStart).toHaveBeenCalledWith('Seminar notes', 'external', localDate(new Date()));
 });
 
 it('shows the current account cached agenda read only when Google fails', async () => {
