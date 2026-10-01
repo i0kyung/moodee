@@ -236,11 +236,16 @@ export function CalendarScreen({ initialMessage = '', connectionRevision = 0, on
         <button type="button" className={styles.refresh} onClick={() => void refresh()} disabled={!connected || busy} aria-label="Refresh agenda">↻</button>
       </header>
       <div className={styles.scroll}>
-        {onAppSettings && <section className={styles.connection}><div><b>Phone reminders {phoneReminders?'· On':'· Off'}</b><span>Study plans and focus / break alerts.</span></div><button type="button" onClick={onAppSettings}>Manage</button></section>}
-        <section className={styles.connection} aria-label="Google Calendar connection">
+        <section className={styles.connection} aria-label="Calendar connections">
+          <div className={styles.connectionRow} role="group" aria-label="Google Calendar connection">
           {checkingConnection ? <><div><b>Checking Google Calendar…</b><span>Getting your connection ready.</span></div><button type="button" disabled>Checking…</button></>
             : connected ? <><div><b>Google Calendar connected</b><span>{email}</span></div><button type="button" onClick={() => void disconnect()} disabled={busy}>Disconnect</button></>
             : <><div><b>Plans on this device</b><span>Connect Google to see plans in Google Calendar too.</span></div><button type="button" onClick={() => void beginGoogleConnection().catch((error) => setMessage(error.message))} disabled={!googleConfigured}>{googleConfigured ? 'Connect' : 'Setup needed'}</button></>}
+          </div>
+          {onAppSettings && <div className={styles.phoneRow}>
+            <span className={styles.phoneStatus}>Phone reminders · {phoneReminders ? 'On' : 'Off'}</span>
+            <button type="button" className={styles.phoneManage} onClick={onAppSettings} aria-label="Manage phone reminders">Manage</button>
+          </div>}
         </section>
         {connected && upcomingGuestCount > 0 && <section className={styles.migration}><b>Bring your plans along?</b><p>{upcomingGuestCount} upcoming plan{upcomingGuestCount === 1 ? '' : 's'} on this device can move to Google Calendar.</p><button type="button" onClick={() => void migrate()} disabled={busy || offline}>Move upcoming plans</button></section>}
         {offline && <div className={styles.offline} role="status">Offline or Google access expired. Last saved agenda is read only. <button type="button" onClick={() => void refresh()} disabled={busy}>Try again</button> <button type="button" onClick={() => void beginGoogleConnection().catch((error) => setMessage(error.message))}>Reconnect Google</button></div>}

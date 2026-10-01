@@ -1,11 +1,23 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { addDays, getWeekDays, guestPlans, localDate } from '../lib/calendar';
 import { CalendarScreen } from './CalendarScreen';
 
 beforeEach(() => localStorage.clear());
 afterEach(cleanup);
+
+it('keeps phone settings with calendar connection controls and opens the settings panel', async () => {
+  const onAppSettings = vi.fn();
+  const { rerender } = render(<CalendarScreen onBack={() => {}} onStart={() => {}} onAppSettings={onAppSettings} phoneReminders />);
+  const connections = screen.getByRole('region', { name: 'Calendar connections' });
+  await within(connections).findByText('Plans on this device');
+  expect(within(connections).getByText('Phone reminders · On')).toBeTruthy();
+  fireEvent.click(within(connections).getByRole('button', { name: 'Manage phone reminders' }));
+  expect(onAppSettings).toHaveBeenCalledOnce();
+  rerender(<CalendarScreen onBack={() => {}} onStart={() => {}} onAppSettings={onAppSettings} phoneReminders={false} />);
+  expect(within(connections).getByText('Phone reminders · Off')).toBeTruthy();
+});
 
 it('creates a guest plan and offers its goal for a session', async () => {
   const onStart = vi.fn();

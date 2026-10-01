@@ -18,6 +18,7 @@ interface Props {
   onSubject: (subject: string) => void;
   onStart: () => void;
   onClose?: () => void;
+  onTutor?: () => void;
   mode?: FocusMode;
   onMode?: (mode: FocusMode) => void;
 }
@@ -25,7 +26,7 @@ interface Props {
 // One minute keeps the focus and reward flow easy to demonstrate.
 const DURATIONS = [15, 25, 50, 1];
 
-export function SessionSheet({ open, minutes, subject, initialEventId, agendaDate, onMinutes, onSubject, onStart, onClose = () => {}, mode = 'timer', onMode }: Props) {
+export function SessionSheet({ open, minutes, subject, initialEventId, agendaDate, onMinutes, onSubject, onStart, onClose = () => {}, onTutor, mode = 'timer', onMode }: Props) {
   const date = agendaDate ?? localDate(new Date());
   const [localPlans, setLocalPlans] = useState<StudyPlan[]>([]);
   const [remoteEvents, setRemoteEvents] = useState<AgendaEvent[]>([]);
@@ -65,7 +66,7 @@ export function SessionSheet({ open, minutes, subject, initialEventId, agendaDat
   };
 
   return (
-    <Sheet open={open} onClose={onClose} belowHeader title="Plan this session" subtitle="Choose your rhythm and one thing to work on." action={<button type="button" className={styles.back} onClick={onClose} aria-label="Back to seats">Back</button>}>
+    <Sheet open={open} onClose={onClose} belowHeader title="Plan this session" subtitle="Choose your rhythm and one thing to work on." action={<div className={styles.headerActions}><button type="button" className={styles.back} onClick={onClose} aria-label="Back to seats">Back</button>{onTutor && <button type="button" className={styles.back} onClick={onTutor}>Tutor</button>}</div>}>
       <div className={`${styles.chips} ${styles.modes}`} role="radiogroup" aria-label="Focus rhythm">
         <button type="button" role="radio" aria-checked={mode === 'timer'} className={`${styles.chip} ${mode === 'timer' ? styles.on : ''}`} onClick={() => onMode?.('timer')}>Timer</button>
         <button type="button" role="radio" aria-checked={mode === 'pomodoro'} className={`${styles.chip} ${mode === 'pomodoro' ? styles.on : ''}`} onClick={() => onMode?.('pomodoro')}>Pomodoro <small>25 / 5</small></button>

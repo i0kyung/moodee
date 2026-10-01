@@ -114,13 +114,22 @@
   width: min(230px, 62%);
 }
 .chatToggle {
-  height: 36px;
+  min-height: 44px;
   padding: 0 14px;
   border-radius: 999px;
   font-size: 13px;
   font-weight: 800;
 }
 .toggles { display: flex; align-items: center; gap: 6px; }
+
+/* Short screens keep sound controls in the mixer, leaving room for the map. */
+@media (max-height: 820px) {
+  .sounds button:not(:last-child) { display: none; }
+  .minimap { width: 96px; }
+}
+@media (max-height: 600px) {
+  .minimap { display: none; }
+}
 .chatPanel {
   width: 100%;
   padding: 10px;

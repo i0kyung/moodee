@@ -1,6 +1,8 @@
 # PWA and phone reminders
 
-MOODEE installs from its existing HTTPS GitHub Pages URL. No app store is required.
+MOODEE installs from an HTTPS deployment. No app store is required.
+
+The isolated preview is https://nazwansm.github.io/moodee-pwa-preview/ . It builds `feature/pwa-phone-notifications` using the separate `NazwanSM/moodee-pwa-preview` repository; production and `main` are unchanged. Installation, permissions, and browser storage are separate from production. The optional `PWA_PREVIEW_ORIGIN` secret adds this origin alongside existing `APP_ORIGINS`; remove it when retiring the preview. Google OAuth on this preview needs its URL added to Supabase Auth allowed redirects. Phone reminders work as a guest without Google.
 
 ## On a phone
 
@@ -62,8 +64,9 @@ References: [WebKit: Web Push on iOS](https://webkit.org/blog/13878/web-push-for
 
 ## Implementation verification — 1 October 2026
 
-- 117 Vitest tests and 29 rule checks passed; TypeScript and production/PWA build passed. The existing large-bundle warning and a Vite PWA plugin deprecation warning remain non-blocking.
+- 120 Vitest tests and 29 rule checks passed; TypeScript and production/PWA build passed. The existing large-bundle warning and a Vite PWA plugin deprecation warning remain non-blocking.
 - SQL tests ran inside a rolled-back transaction against the linked project: private table/RPC access, stale revision rejection, cancellation, test deduplication, five-job delivery batches, and active leases passed.
 - Live `push/status` returned configured; anonymous authentication is enabled; an empty-queue dispatcher smoke test returned HTTP 200. Backend migration, private keys/Vault configuration, and both Edge Functions are deployed. The cron scheduler runs every 15 seconds with no observed execution failures during checks.
 - Frontend changes are on `feature/pwa-phone-notifications`; they have not been pushed or merged to `main`, and the production Pages frontend has not been replaced.
 - Real phone permission, encrypted push delivery and lock-screen presentation remain device acceptance tests. Follow the steps above after deploying the feature to an HTTPS preview or approving its release.
+- Calendar phone settings share the connection card. Tutor/Chat clearance includes the computed bottom margin (and iPhone safe area); planning has its own Tutor button. Visual checks cover 402×874 with simulated iPhone insets and 320×568, plus tests for footer resizing and reminder settings.

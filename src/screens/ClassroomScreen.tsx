@@ -2,7 +2,7 @@
 // 자리 고르기 → 자리로 이동·앉기 → 소리 조절 → 시간 + "What are you studying?" → 집중 → 기록 저장
 // 같은 방 친구들이 무엇을 공부 중인지는 이름표와 People 시트로 보인다(채팅 없음)
 import { AnimatePresence, motion } from 'framer-motion';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { soundscape, type SoundId } from '../audio/soundscape';
 import { useSoundscape } from '../audio/useSoundscape';
 import { ClassroomHud } from '../components/ClassroomHud';
@@ -152,15 +152,17 @@ export function ClassroomScreen({ characterId, initialSubject = '', initialEvent
   }, [session, finish, clear]);
 
   useEffect(() => { if(!visible) setTutorOpen(false); }, [visible]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const panel=panelRef.current;
-    if(!panel || phase!=='focus' || done) {setFooterHeight(0);return;}
-    const update=()=>setFooterHeight(panel.offsetHeight + 24);
+    if(!visible || !panel || phase!=='focus' || done) {setFooterHeight(0);return;}
+    // The computed margin includes the iPhone home-indicator safe area.
+    // offsetHeight stays stable while Framer Motion animates the panel entrance.
+    const update=()=>setFooterHeight(panel.offsetHeight + (parseFloat(getComputedStyle(panel).marginBottom) || 0));
     update();
     const observer=typeof ResizeObserver==='undefined'?null:new ResizeObserver(update);
     observer?.observe(panel);window.addEventListener('resize',update);
     return()=>{observer?.disconnect();window.removeEventListener('resize',update);};
-  }, [phase, done, takingBreak]);
+  }, [phase, done, takingBreak, visible]);
 
   useEffect(() => {
     if (!visible || takingBreak) { stop(); setThoughtOpen(false); setMixerOpen(false); setPeopleOpen(false); }
@@ -319,9 +321,9 @@ export function ClassroomScreen({ characterId, initialSubject = '', initialEvent
         onStop={stop}
       />
       {/* ② 시간 + 무엇을 공부할지 */}
-      <SessionSheet open={phase === 'plan' && !done && !peopleOpen && !mixerOpen && !tutorOpen} mode={mode} onMode={setMode} onClose={() => setPhase('explore')} minutes={minutes} subject={subject} initialEventId={initialEventId} agendaDate={agendaDate} onMinutes={setMinutes} onSubject={setSubject} onStart={startFocus} />
+      <SessionSheet open={phase === 'plan' && !done && !peopleOpen && !mixerOpen && !tutorOpen} mode={mode} onMode={setMode} onClose={() => setPhase('explore')} onTutor={openTutor} minutes={minutes} subject={subject} initialEventId={initialEventId} agendaDate={agendaDate} onMinutes={setMinutes} onSubject={setSubject} onStart={startFocus} />
 
-      {!done && phase !== 'explore' && (phase !== 'focus' || takingBreak) && <button type="button" className={styles.tutorButton} style={takingBreak && footerHeight ? {bottom:footerHeight+12}:undefined} onClick={openTutor}>Tutor</button>}
+      {!done && (phase === 'sitting' || takingBreak) && <button type="button" className={styles.tutorButton} style={takingBreak && footerHeight ? {bottom:footerHeight+12}:undefined} onClick={openTutor}>Tutor</button>}
       <TutorPanel open={tutorOpen && visible && !done} onClose={()=>setTutorOpen(false)} goal={subject} session={session} onPause={focusTimer.togglePause} resetRevision={tutorRevision} initialMessage={tutorMessage}/>
 
       <SoundMixer open={mixerOpen} onClose={() => setMixerOpen(false)} playing={playing} onPlay={start} onStop={stop} />

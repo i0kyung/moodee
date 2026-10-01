@@ -44,6 +44,8 @@
 .input::placeholder { color: #b5afb5; }
 .note { margin: 10px 0 0; text-align: center; color: #9c9499; font-size: 12px; font-weight: 700; }
 .back { flex: none; padding: 8px 12px; border-radius: 999px; background: #fff; font-weight: 800; color: #6f6474; }
+.headerActions { display: grid; flex: none; gap: 6px; }
+.headerActions .back { min-height: 40px; }
 .modes { margin-top: 16px; }
 .modes .chip { flex: 1; }
 .pomodoroHint { color: #6f6474; font-weight: 700; font-size: 13px; line-height: 1.5; margin: 12px 2px 0; }

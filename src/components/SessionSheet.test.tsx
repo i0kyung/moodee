@@ -34,6 +34,18 @@ it('lets the user return to the seats without starting a session', () => {
   expect(onClose).toHaveBeenCalledOnce();
 });
 
+it('offers Tutor inside the planning panel without starting the timer', () => {
+  const onTutor = vi.fn();
+  const onStart = vi.fn();
+  render(<SessionSheet open minutes={25} subject="Coding" onTutor={onTutor} onMinutes={() => {}} onSubject={() => {}} onStart={onStart} />);
+  const dialog = screen.getByRole('dialog', { name: 'Plan this session' });
+  const tutor = screen.getByRole('button', { name: 'Tutor' });
+  expect(dialog.contains(tutor)).toBe(true);
+  fireEvent.click(tutor);
+  expect(onTutor).toHaveBeenCalledOnce();
+  expect(onStart).not.toHaveBeenCalled();
+});
+
 it('offers Pomodoro separately from a standard timer and requires a goal in either mode', () => {
   const onMode = vi.fn();
   const { rerender } = render(<SessionSheet open minutes={50} subject="" mode="timer" onMode={onMode} onMinutes={() => {}} onSubject={() => {}} onStart={() => {}} />);

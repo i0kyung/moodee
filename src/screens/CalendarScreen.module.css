@@ -7,7 +7,11 @@
 .scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 0 18px calc(var(--safe-bottom) + 32px); scrollbar-width: none; }
 .scroll::-webkit-scrollbar { display: none; }
 .connection, .migration, .weekCard, .event, .empty { background: var(--card-strong); border: 1px solid rgba(255,255,255,.65); box-shadow: var(--shadow-soft); }
-.connection { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 16px; border-radius: 22px; }
+.connection { padding: 14px 16px; border-radius: 22px; }
+.connectionRow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.phoneRow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+.connection .phoneStatus { display: inline-flex; align-items: center; margin: 0; padding: 6px 10px; border-radius: 999px; color: #756388; background: #eee6f5; font-size: 11px; font-weight: 800; }
+.connection .phoneManage { min-height: 40px; padding: 8px 13px; color: #756388; background: #eee6f5; }
 .connection div { min-width: 0; }
 .connection b, .connection span { display: block; }
 .connection b { font-size: 14px; font-weight: 900; }
