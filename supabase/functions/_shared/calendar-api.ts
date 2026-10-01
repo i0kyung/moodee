@@ -17,7 +17,7 @@ interface GoogleEvent {
 }
 
 export class GoogleApiError extends Error {
-  constructor(public status: number, message: string) { super(message); }
+  constructor(public status: number, message: string, public reason?: string) { super(message); }
 }
 export class CalendarConflict extends GoogleApiError {
   constructor() { super(412, 'This event changed in Google Calendar. Refresh and repeat your edit.'); }
@@ -78,7 +78,22 @@ export class GoogleCalendarApi {
       headers: { Authorization: `Bearer ${this.token}`, 'Content-Type': 'application/json', ...init.headers },
     });
     if (response.status === 412) throw new CalendarConflict();
-    if (!response.ok) throw new GoogleApiError(response.status, `Google Calendar request failed (${response.status}).`);
+    if (!response.ok) {
+      // Google's reason code identifies disabled APIs, missing scopes, and account
+      // restrictions without exposing OAuth tokens or event contents to the UI.
+      const body = await response.json().catch(() => null) as {
+        error?: { errors?: { reason?: string }[]; details?: { reason?: string }[]; status?: string }
+      } | null;
+      const rawReason = body?.error?.details?.find((item) => item.reason)?.reason
+        ?? body?.error?.errors?.find((item) => item.reason)?.reason
+        ?? body?.error?.status;
+      const reason = rawReason && /^[A-Za-z][A-Za-z0-9_.]{0,63}$/.test(rawReason) ? rawReason : undefined;
+      const operation = path.startsWith('/users/me/calendarList') ? 'list calendars'
+        : path === '/calendars' ? 'create calendar'
+        : path.includes('/events') ? 'access events' : 'access calendar';
+      const detail = reason ? `: ${reason}` : '';
+      throw new GoogleApiError(response.status, `Google Calendar could not ${operation} (${response.status}${detail}).`, reason);
+    }
     if (response.status === 204) return undefined as T;
     return await response.json() as T;
   }
