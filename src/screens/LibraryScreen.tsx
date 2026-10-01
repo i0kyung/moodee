@@ -2,6 +2,7 @@
 // 탑뷰에서 자리를 찾아 앉으면 눈높이 장면 → 책상 위 책으로 이어지고, 펼친 책의 빈 페이지에 직접 글을 쓴다
 import { AnimatePresence, motion } from 'framer-motion';
 import { useMemo, useState } from 'react';
+import { BackgroundSoundButton } from '../components/BackgroundSound';
 import { BackIcon, PeopleIcon } from '../components/Icons';
 import { getCharacter, type CharacterId } from '../data/characters';
 import { getCompanions } from '../lib/companions';
@@ -63,10 +64,11 @@ type Page = 'write' | 'notes';
 interface Props {
   characterId: CharacterId | null;
   onBack: () => void;
+  onSoundSettings: () => void;
   onChangeFriends: () => void;
 }
 
-export function LibraryScreen({ characterId, onBack, onChangeFriends }: Props) {
+export function LibraryScreen({ characterId, onBack, onChangeFriends, onSoundSettings }: Props) {
   const character = getCharacter(characterId);
   const [seated, setSeated] = useState(false);
   const [open, setOpen] = useState(false); // 책을 펼쳤는지
@@ -242,9 +244,12 @@ export function LibraryScreen({ characterId, onBack, onChangeFriends }: Props) {
           <BackIcon />
         </button>
         <span className={hud.chip}>Library</span>
-        <button type="button" className={hud.count} onClick={() => setFriendsOpen(true)} aria-label={`${npcs.length + BAKED_PEOPLE + 1} people here. Friends`}>
-          <PeopleIcon /> {npcs.length + BAKED_PEOPLE + 1}
-        </button>
+        <div className={hud.topActions}>
+          <button type="button" className={hud.count} onClick={() => setFriendsOpen(true)} aria-label={`${npcs.length + BAKED_PEOPLE + 1} people here. Friends`}>
+            <PeopleIcon /> {npcs.length + BAKED_PEOPLE + 1}
+          </button>
+          <BackgroundSoundButton dark onClick={onSoundSettings} />
+        </div>
       </header>
 
       <FriendsSheet open={friendsOpen} onClose={() => setFriendsOpen(false)} me={character} onChangeCount={onChangeFriends} />

@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useMemo, useState } from 'react';
 import { CoinChip } from '../components/Coin';
+import { BackgroundSoundButton } from '../components/BackgroundSound';
 import { BackIcon } from '../components/Icons';
 import { Sheet } from '../components/Sheet';
 import { EXHIBIT_OBJECTS, type ExhibitObjectId } from '../config/economy';
@@ -51,11 +52,12 @@ const SLOTS = [
 interface Props {
   characterId: CharacterId | null;
   onBack: () => void;
+  onSoundSettings: () => void;
   onMembership: () => void;
   onChangeCharacter: (id: CharacterId) => void;
 }
 
-export function RoomScreen({ characterId, onBack, onMembership, onChangeCharacter }: Props) {
+export function RoomScreen({ characterId, onBack, onMembership, onChangeCharacter, onSoundSettings }: Props) {
   const character = getCharacter(characterId);
   const wallet = useWallet();
   const [slot, setSlot] = useState<(typeof SLOTS)[number] | null>(null);
@@ -124,7 +126,7 @@ export function RoomScreen({ characterId, onBack, onMembership, onChangeCharacte
           <BackIcon />
         </button>
         <span className={hud.chip}>My Room</span>
-        <CoinChip onClick={onMembership} />
+        <div className={hud.topActions}><CoinChip onClick={onMembership} /><BackgroundSoundButton dark onClick={onSoundSettings} /></div>
       </header>
 
       {/* 물건 고르기 */}

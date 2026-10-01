@@ -305,3 +305,5 @@
   .calendarButton span { display: none; }
   .calendarButton { width: 60px; padding: 0; }
 }
+
+.sound { position:absolute; right:20px; top:14px; }
