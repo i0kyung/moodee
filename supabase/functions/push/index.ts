@@ -3,7 +3,7 @@ import { pushHandler } from '../_shared/push-handler.ts';
 const admin=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,{auth:{persistSession:false,autoRefreshToken:false}});
 Deno.serve(pushHandler({
   publicKey:Deno.env.get('VAPID_PUBLIC_KEY')??'',
-  origins:(Deno.env.get('APP_ORIGINS')??'').split(',').map(s=>s.trim()).filter(Boolean),
+  origins:[Deno.env.get('APP_ORIGINS')??'',Deno.env.get('PWA_PREVIEW_ORIGIN')??''].join(',').split(',').map(s=>s.trim()).filter(Boolean),
   user:async token=>{const {data,error}=await admin.auth.getUser(token);return error?null:data.user?.id??null;},
   perform:async (uid,action,b)=>{
     let result;

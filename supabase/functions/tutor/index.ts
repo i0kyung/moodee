@@ -9,7 +9,7 @@ const admin=url && serviceKey?createClient(url,serviceKey,{auth:{persistSession:
 const ai=new OpenAITutor(openAIKey??'',Deno.env.get('OPENAI_TUTOR_MODEL')??'gpt-4.1-mini');
 Deno.serve(tutorHandler({
   configured:Boolean(admin && openAIKey),
-  origins:(Deno.env.get('APP_ORIGINS')??'').split(',').map(s=>s.trim()).filter(Boolean),
+  origins:[Deno.env.get('APP_ORIGINS')??'',Deno.env.get('PWA_PREVIEW_ORIGIN')??''].join(',').split(',').map(s=>s.trim()).filter(Boolean),
   user:async token=>{ const {data,error}=await admin!.auth.getUser(token); return error || !data.user?null:{id:data.user.id,anonymous:data.user.is_anonymous===true}; },
   quota:async(id,anonymous,reserve)=>{
     const {data,error}=await admin!.rpc('tutor_usage',{p_uid:id,p_anonymous:anonymous,p_reserve:reserve});

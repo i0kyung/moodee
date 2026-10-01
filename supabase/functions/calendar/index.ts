@@ -14,7 +14,7 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const googleClientId = Deno.env.get('GOOGLE_CLIENT_ID')!;
 const googleClientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET')!;
-const allowedOrigins = (Deno.env.get('APP_ORIGINS') ?? '').split(',').map((value) => value.trim()).filter(Boolean);
+const allowedOrigins = [Deno.env.get('APP_ORIGINS') ?? '', Deno.env.get('PWA_PREVIEW_ORIGIN') ?? ''].join(',').split(',').map((value) => value.trim()).filter(Boolean);
 const admin = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
 
 function cors(origin: string | null): HeadersInit {
