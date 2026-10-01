@@ -22,6 +22,8 @@ import { CalendarScreen } from './screens/CalendarScreen';
 import { useFocusSession } from './lib/useFocusSession';
 import { BreakTimer, SessionExitDialog } from './components/SessionOverlays';
 import { exchangeOAuthSession, oauthDestination } from './lib/auth';
+import { usePhoneNotifications } from './lib/usePhoneNotifications';
+import { PwaPanel } from './components/PwaPanel';
 
 type Screen = 'intro' | 'home' | 'companions' | 'select' | 'classroom' | 'cafe' | 'library' | 'museum' | 'my-room' | 'records' | 'membership' | 'calendar';
 
@@ -29,14 +31,19 @@ const SPLASH_SECONDS = 2.2;
 
 export function App() {
   const focusTimer = useFocusSession();
+  const phoneNotifications = usePhoneNotifications(focusTimer.session);
+  const [appSettingsOpen,setAppSettingsOpen]=useState(false);
   const [stopRequest, setStopRequest] = useState<'exit' | 'stop' | null>(null);
   useEffect(() => {
     if (!focusTimer.session || focusTimer.session.stage === 'complete') setStopRequest(null);
   }, [focusTimer.session?.stage]);
   const [characterId, setCharacterId] = useState<CharacterId | null>(() => loadValue<CharacterId | null>('character', null));
-  const [screen, setScreen] = useState<Screen>('intro');
+  const [screen, setScreen] = useState<Screen>(() => {
+    const destination=new URLSearchParams(window.location.search).get('open');
+    return destination==='calendar'?'calendar':destination==='classroom' || focusTimer.session?'classroom':'intro';
+  });
   // 앱을 열면 인트로 → 친구 수 → 캐릭터 고르기 순서로 한 번 지나간다
-  const [onboarding, setOnboarding] = useState(true);
+  const [onboarding, setOnboarding] = useState(() => !focusTimer.session);
   // Membership에서 뒤로 갈 곳(홈 또는 둘러보던 공간)
   const [membershipFrom, setMembershipFrom] = useState<Screen>('home');
   const [classroomSuggestion, setClassroomSuggestion] = useState<{ text: string; eventId?: string; date?: string }>({ text: '' });
@@ -44,6 +51,15 @@ export function App() {
   const [calendarConnectionRevision, setCalendarConnectionRevision] = useState(0);
   const [tutorMessage,setTutorMessage]=useState('');
   const [initialTutorOpen,setInitialTutorOpen]=useState(false);
+  useEffect(()=>{
+    const address=new URL(window.location.href);
+    if(address.searchParams.has('open')) {address.searchParams.delete('open');window.history.replaceState({},'',address.pathname+address.search+address.hash);setOnboarding(false);}
+    const open=(event:MessageEvent)=>{
+      if(event.data?.type==='OPEN_SCREEN' && ['calendar','classroom'].includes(event.data.destination)) {setScreen(event.data.destination);setOnboarding(false);}
+    };
+    navigator.serviceWorker?.addEventListener('message',open);
+    return()=>navigator.serviceWorker?.removeEventListener('message',open);
+  },[]);
 
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
@@ -119,10 +135,11 @@ export function App() {
               onRecords={() => setScreen('records')}
               onMembership={() => openMembership('home')}
               onCalendar={() => setScreen('calendar')}
+              onAppSettings={() => setAppSettingsOpen(true)}
             />
           )}
           {screen === 'calendar' && (
-            <CalendarScreen key="calendar" initialMessage={calendarMessage} connectionRevision={calendarConnectionRevision} onBack={() => setScreen('home')} onStart={(text, eventId, date) => openClassroom(text, eventId, date)} />
+            <CalendarScreen key="calendar" initialMessage={calendarMessage} connectionRevision={calendarConnectionRevision} onBack={() => setScreen('home')} onStart={(text, eventId, date) => openClassroom(text, eventId, date)} onAppSettings={()=>setAppSettingsOpen(true)} phoneReminders={phoneNotifications.enabled}/>
           )}
           {screen === 'companions' && <CompanionSetupScreen key="companions" onBack={onboarding ? undefined : () => setScreen('home')} onDone={() => setScreen(onboarding ? 'select' : 'home')} />}
           {screen === 'intro' && <IntroScreen key="intro" onStart={() => setScreen('companions')} />}
@@ -159,6 +176,8 @@ export function App() {
           setScreen(stopRequest === 'exit' ? 'home' : 'classroom');
           setStopRequest(null);
         }} />}
+        <PwaPanel open={appSettingsOpen} onClose={()=>setAppSettingsOpen(false)} active={Boolean(focusTimer.session && focusTimer.session.stage!=='complete')} notifications={phoneNotifications}/>
+        {phoneNotifications.syncError && screen==='classroom' && <button type="button" className="notification-warning" onClick={()=>setAppSettingsOpen(true)}>Phone reminders need sync · Manage</button>}
       </div>
     </MotionConfig>
   );

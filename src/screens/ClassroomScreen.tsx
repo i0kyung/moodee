@@ -15,7 +15,7 @@ import { SessionSheet } from '../components/SessionSheet';
 import { SoundMixer } from '../components/SoundMixer';
 import { CLASSMATES } from '../data/classmates';
 import { getCharacter, type CharacterId } from '../data/characters';
-import type { Seat } from '../data/places';
+import { CLASSROOM, type Seat } from '../data/places';
 import { MIN_REWARD_MINUTES, sessionCoins } from '../config/economy';
 import { addSession, fmtMinutes, setFriction } from '../lib/sessions';
 import { addThought } from '../lib/thoughts';
@@ -60,8 +60,8 @@ const FRICTION = ['Easy', 'Okay', 'So-so', 'Hard', 'Very hard'];
 export function ClassroomScreen({ characterId, initialSubject = '', initialEventId, agendaDate, onExit, onRecords, visible, focusTimer, onEnd, initialTutorOpen = false, tutorMessage = '' }: Props) {
   const character = getCharacter(characterId);
   const { settings, playing, start, stop } = useSoundscape();
-  const [phase, setPhase] = useState<Phase>('explore');
-  const [seat, setSeat] = useState<Seat | null>(null);
+  const [phase, setPhase] = useState<Phase>(() => focusTimer.session ? 'focus' : 'explore');
+  const [seat, setSeat] = useState<Seat | null>(() => focusTimer.session ? CLASSROOM.top.seats.find(s=>s.id===loadValue('activeSeat','')) ?? CLASSROOM.top.seats[0] : null);
   const [mixerOpen, setMixerOpen] = useState(false);
   const [peopleOpen, setPeopleOpen] = useState(false);
   const [tutorOpen, setTutorOpen] = useState(initialTutorOpen);
@@ -73,8 +73,8 @@ export function ClassroomScreen({ characterId, initialSubject = '', initialEvent
 
   // ── 세션 계획 ──
   const [minutes, setMinutes] = useState(() => loadValue('focusMinutes', 25));
-  const [subject, setSubject] = useState(initialSubject);
-  const [mode, setMode] = useState<FocusMode>('timer');
+  const [subject, setSubject] = useState(focusTimer.session?.subject ?? initialSubject);
+  const [mode, setMode] = useState<FocusMode>(focusTimer.session?.mode ?? 'timer');
 
   // ── 타이머 ──
   const { session, clear } = focusTimer;
@@ -82,6 +82,7 @@ export function ClassroomScreen({ characterId, initialSubject = '', initialEvent
   const remaining = session?.remainingMs ?? minutes * 60_000;
   const takingBreak = session?.stage === 'break' || session?.stage === 'return';
   const [done, setDone] = useState<Done | null>(null);
+  const completionHandled = useRef<string|null>(null);
   // 생각 내려놓기(C6): 타이머는 멈추지 않는다
   const [thoughtOpen, setThoughtOpen] = useState(false);
   const [thought, setThought] = useState('');
@@ -141,6 +142,9 @@ export function ClassroomScreen({ characterId, initialSubject = '', initialEvent
 
   useEffect(() => {
     if (session?.stage !== 'complete') return;
+    const receipt=`${session.deadline}:${session.subject}:${session.focusedMs}`;
+    if(completionHandled.current===receipt) return;
+    completionHandled.current=receipt;
     setTutorOpen(false);setTutorRevision(n=>n+1);
     if (session.focusedMs >= 10_000) finish(session.focusedMs);
     else { setThoughtOpen(false); setPhase('plan'); }
@@ -185,6 +189,7 @@ export function ClassroomScreen({ characterId, initialSubject = '', initialEvent
     if (!intent) return;
     setSubject(intent.text);
     save('focusMinutes', minutes);
+    save('activeSeat',seat?.id ?? '');
     focusTimer.start(mode, minutes, intent.text);
     setPhase('focus');
     if (!playing) await start();

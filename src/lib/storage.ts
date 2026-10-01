@@ -23,6 +23,7 @@ export function loadValue<T>(key: string, fallback: T): T {
 export function save(key: string, value: unknown) {
   try {
     localStorage.setItem(PREFIX + key, JSON.stringify(value));
+    if(key==='guestPlans') window.dispatchEvent(new Event('moodee:plans-changed'));
   } catch {
     /* 저장 실패는 무시 */
   }

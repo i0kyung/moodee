@@ -305,3 +305,4 @@
   .calendarButton span { display: none; }
   .calendarButton { width: 60px; padding: 0; }
 }
+.appSettings { border:0; background:none; color:#83718f; font:inherit; font-size:12px; font-weight:800; padding:10px; margin-top:2px; text-decoration:underline; text-underline-offset:3px; }

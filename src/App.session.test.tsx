@@ -3,6 +3,17 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { App } from './App';
 import { listSessions } from './lib/sessions';
+import { StrictMode } from 'react';
+vi.mock('./lib/pwa',()=>({updateAvailable:()=>false,applyUpdate:()=>Promise.resolve()}));
+it('reopens an expired saved session in Classroom and grants its reward once in Strict Mode',async()=>{
+  vi.setSystemTime(100000);
+  localStorage.setItem('moodie:activeFocusSession',JSON.stringify({mode:'timer',subject:'Saved reading',stage:'focus',status:'running',focusDurationMs:60000,remainingMs:60000,deadline:Date.now()-1000,focusedMs:0,rounds:0}));
+  localStorage.setItem('moodie:activeSeat',JSON.stringify('4C'));
+  render(<StrictMode><App/></StrictMode>);tick(300);
+  expect(listSessions()).toHaveLength(1);
+  expect(listSessions()[0].subject).toBe('Saved reading');
+  expect(listSessions()[0].seat).toBe('4C');
+});
 
 // Replace graphics and audio browser APIs; navigation, session UI and timer stay real.
 vi.mock('./components/SeatPicker', () => ({ SeatPicker: ({ onSit }: { onSit: (seat: unknown) => void }) => <button onClick={() => onSit({ id: '4C', side: 'right', x: 640, y: 1165 })}>Sit</button> }));

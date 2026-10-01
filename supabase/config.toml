@@ -4,3 +4,11 @@ verify_jwt = false
 [functions.tutor]
 # Validates the Supabase user server-side, including anonymous sessions.
 verify_jwt = false
+
+[functions.push]
+# Verifies the Supabase user inside the handler; anonymous guests are supported.
+verify_jwt = false
+
+[functions.push-dispatch]
+# Private scheduler: validates PUSH_CRON_SECRET; never a public dispatch endpoint.
+verify_jwt = false

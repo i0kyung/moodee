@@ -11,6 +11,8 @@ interface Props {
   initialMessage?: string;
   connectionRevision?: number;
   onBack: () => void;
+  onAppSettings?: () => void;
+  phoneReminders?: boolean;
   onStart: (title: string, eventId: string, date: string) => void;
 }
 
@@ -57,7 +59,7 @@ function weekTitle(days: Date[]): string {
   return `${firstPart} – ${last.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}`;
 }
 
-export function CalendarScreen({ initialMessage = '', connectionRevision = 0, onBack, onStart }: Props) {
+export function CalendarScreen({ initialMessage = '', connectionRevision = 0, onBack, onStart, onAppSettings, phoneReminders=false }: Props) {
   const [week, setWeek] = useState(() => getWeekDays(new Date())[0]);
   const [selectedDate, setSelectedDate] = useState(() => localDate(new Date()));
   const [localPlans, setLocalPlans] = useState(guestPlans.list);
@@ -234,10 +236,11 @@ export function CalendarScreen({ initialMessage = '', connectionRevision = 0, on
         <button type="button" className={styles.refresh} onClick={() => void refresh()} disabled={!connected || busy} aria-label="Refresh agenda">↻</button>
       </header>
       <div className={styles.scroll}>
+        {onAppSettings && <section className={styles.connection}><div><b>Phone reminders {phoneReminders?'· On':'· Off'}</b><span>Study plans and focus / break alerts.</span></div><button type="button" onClick={onAppSettings}>Manage</button></section>}
         <section className={styles.connection} aria-label="Google Calendar connection">
           {checkingConnection ? <><div><b>Checking Google Calendar…</b><span>Getting your connection ready.</span></div><button type="button" disabled>Checking…</button></>
             : connected ? <><div><b>Google Calendar connected</b><span>{email}</span></div><button type="button" onClick={() => void disconnect()} disabled={busy}>Disconnect</button></>
-            : <><div><b>Plans on this device</b><span>Connect Google for reminders outside MOODEE.</span></div><button type="button" onClick={() => void beginGoogleConnection().catch((error) => setMessage(error.message))} disabled={!googleConfigured}>{googleConfigured ? 'Connect' : 'Setup needed'}</button></>}
+            : <><div><b>Plans on this device</b><span>Connect Google to see plans in Google Calendar too.</span></div><button type="button" onClick={() => void beginGoogleConnection().catch((error) => setMessage(error.message))} disabled={!googleConfigured}>{googleConfigured ? 'Connect' : 'Setup needed'}</button></>}
         </section>
         {connected && upcomingGuestCount > 0 && <section className={styles.migration}><b>Bring your plans along?</b><p>{upcomingGuestCount} upcoming plan{upcomingGuestCount === 1 ? '' : 's'} on this device can move to Google Calendar.</p><button type="button" onClick={() => void migrate()} disabled={busy || offline}>Move upcoming plans</button></section>}
         {offline && <div className={styles.offline} role="status">Offline or Google access expired. Last saved agenda is read only. <button type="button" onClick={() => void refresh()} disabled={busy}>Try again</button> <button type="button" onClick={() => void beginGoogleConnection().catch((error) => setMessage(error.message))}>Reconnect Google</button></div>}
@@ -251,7 +254,7 @@ export function CalendarScreen({ initialMessage = '', connectionRevision = 0, on
           {events.length === 0 && <div className={styles.empty}>A little room for something new. ✦</div>}
           {events.map((event) => <article className={styles.event} key={`${event.calendarId}:${event.id}`}>
             <div className={styles.eventTime}>{formatTime(event.startsAt)}</div>
-            <div className={styles.eventBody}><span className={styles.eventSource}>{event.calendarName}{event.calendarId === 'local' ? ' · local' : ''}</span><h3>{event.title}</h3><p>{event.calendarId === 'local' ? guestReminder(event, now) : event.readOnly ? 'From Google Calendar · read only' : event.reminderMinutes === null ? 'Reminder off' : `Popup + email · ${event.reminderMinutes} min before`}</p>
+            <div className={styles.eventBody}><span className={styles.eventSource}>{event.calendarName}{event.calendarId === 'local' ? ' · local' : ''}</span><h3>{event.title}</h3><p>{event.calendarId === 'local' ? phoneReminders && event.reminderMinutes!=null ? `${event.reminderMinutes===0?'At start':`${event.reminderMinutes} min before`} · phone reminder` : guestReminder(event, now) : event.readOnly ? 'From Google Calendar · read only' : event.reminderMinutes === null ? 'Reminder off' : `Popup + email · ${event.reminderMinutes} min before`}</p>
               <div className={styles.eventActions}><button type="button" onClick={() => onStart(event.title, event.id, eventDate(event.startsAt))} aria-label={`Start ${event.title}`}>Use as one thing ↗</button>{!event.readOnly && !offline && <button type="button" onClick={() => openEdit(event)} aria-label={`Edit ${event.title}`}>Edit</button>}</div>
             </div>
           </article>)}
@@ -263,7 +266,7 @@ export function CalendarScreen({ initialMessage = '', connectionRevision = 0, on
         <div className={styles.formRow}><label>Date<input type="date" value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} required /></label><label>Time<input type="time" value={form.time} onChange={(event) => setForm({ ...form, time: event.target.value })} required /></label></div>
         <label>Duration (minutes)<input type="number" min="1" max="720" value={form.durationMinutes} onChange={(event) => setForm({ ...form, durationMinutes: Number(event.target.value) })} required /></label>
         <label>Remind me<select value={form.reminderMinutes === null ? 'off' : String(form.reminderMinutes)} onChange={(event) => setForm({ ...form, reminderMinutes: event.target.value === 'off' ? null : Number(event.target.value) as ReminderMinutes })}>{reminderOptions.map((option) => <option key={String(option.value)} value={option.value === null ? 'off' : option.value}>{option.label}</option>)}</select></label>
-        <p className={styles.formHint}>{connected ? 'Google Calendar sends popup and email reminders, depending on your Google and device settings.' : 'Guest reminders are shown only while MOODEE is open.'}</p>
+        <p className={styles.formHint}>{connected ? 'Google Calendar sends popup and email reminders, depending on your Google and device settings.' : phoneReminders?'Your reminder is sent to this device, even when MOODEE is closed. Save while online to schedule it.':'Enable phone reminders in Manage to get alerts outside MOODEE. Otherwise reminders appear only in game.'}</p>
         <div className={styles.formActions}>{editing !== 'new' && <button type="button" onClick={() => void remove(editing)} disabled={busy}>Delete</button>}<button type="submit" className="pill pill-primary" disabled={busy}>Save plan</button></div>
       </form></div>}
     </motion.main>

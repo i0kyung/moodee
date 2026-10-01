@@ -24,6 +24,7 @@
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
 }
+.notification-warning { position:absolute; z-index:8; top:calc(74px + env(safe-area-inset-top)); left:24px; right:24px; background:#f6e8c9; border:1px solid #fff9eb; border-radius:18px; padding:10px; font:inherit; font-size:12px; font-weight:800; color:#7f654b; box-shadow:0 6px 18px #5d426d18; }
 
 * {
   box-sizing: border-box;

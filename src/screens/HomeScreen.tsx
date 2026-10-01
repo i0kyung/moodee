@@ -21,6 +21,7 @@ interface Props {
   onRecords: () => void;
   onMembership: () => void;
   onCalendar: () => void;
+  onAppSettings: () => void;
 }
 
 const logo = `${import.meta.env.BASE_URL}assets/brand/logo.png`;
@@ -33,7 +34,7 @@ const greeting = (name: string) => {
   return <>{word}, <b>{name}</b></>;
 };
 
-export function HomeScreen({ characterId, onGo, onChangeCharacter, onRecords, onMembership, onCalendar }: Props) {
+export function HomeScreen({ characterId, onGo, onChangeCharacter, onRecords, onMembership, onCalendar, onAppSettings }: Props) {
   const wallet = useWallet();
   const character = getCharacter(characterId);
   const streak = readStreak();
@@ -126,7 +127,7 @@ export function HomeScreen({ characterId, onGo, onChangeCharacter, onRecords, on
             {dueCount > 0 && <i className={styles.dueDot} aria-hidden />}
           </button>
         </div>
-        <p className={styles.tip}>Drag the wheel or tap a place</p>
+        <button type="button" className={styles.appSettings} onClick={onAppSettings}>Install & phone reminders</button>
       </div>
     </motion.main>
   );
