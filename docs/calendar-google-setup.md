@@ -42,6 +42,8 @@ Untuk build GitHub Pages, tambahkan repository **Variables** `VITE_SUPABASE_URL`
 
 ## 3. Uji koneksi langsung setelah konfigurasi
 
+Jika Connect menampilkan `Google Calendar could not list calendars (403: SERVICE_DISABLED)`, buka **Google Cloud Console → APIs & Services → Library → Google Calendar API** pada project yang memiliki OAuth Client ID MOODEE, lalu klik **Enable**. Pastikan halaman API/Service Details menunjukkan **Status: Enabled** sebelum mengulangi Connect. Scope OAuth saja belum mengaktifkan API untuk project tersebut.
+
 1. Dengan akun yang termasuk Test users, buka aplikasi dan pilih **Calendar → Connect**. Setujui scope Calendar. Setelah kembali, pastikan status menampilkan alamat email yang benar.
 2. Buat rencana berpengingat 10 menit. Buka kalender sekunder **MOODEE** di Google Calendar dan pastikan acara, popup, dan email reminder tampil. Pengiriman notifikasi tetap bergantung pada pengaturan Google Calendar dan perangkat.
 3. Sunting judul/waktu acara di Google Calendar, lalu tekan **Refresh** di MOODEE. Pastikan perubahan muncul. Hapus acara di Google, Refresh lagi, pastikan hilang. Agenda kalender Google lain harus tampil sebagai baca saja.
