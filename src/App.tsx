@@ -24,6 +24,8 @@ import { BreakTimer, SessionExitDialog } from './components/SessionOverlays';
 import { exchangeOAuthSession, oauthDestination } from './lib/auth';
 import { usePhoneNotifications } from './lib/usePhoneNotifications';
 import { PwaPanel } from './components/PwaPanel';
+import { useRoomAudio } from './audio/useRoomAudio';
+import { BackgroundSoundPanel } from './components/BackgroundSound';
 
 type Screen = 'intro' | 'home' | 'companions' | 'select' | 'classroom' | 'cafe' | 'library' | 'museum' | 'my-room' | 'records' | 'membership' | 'calendar';
 
@@ -42,6 +44,10 @@ export function App() {
     const destination=new URLSearchParams(window.location.search).get('open');
     return destination==='calendar'?'calendar':destination==='classroom' || focusTimer.session?'classroom':'intro';
   });
+  useRoomAudio(screen);
+  const [soundSettingsOpen, setSoundSettingsOpen] = useState(false);
+  useEffect(() => setSoundSettingsOpen(false), [screen]);
+  const openSoundSettings = () => { setAppSettingsOpen(false); setSoundSettingsOpen(true); };
   // 앱을 열면 인트로 → 친구 수 → 캐릭터 고르기 순서로 한 번 지나간다
   const [onboarding, setOnboarding] = useState(() => !focusTimer.session);
   // Membership에서 뒤로 갈 곳(홈 또는 둘러보던 공간)
@@ -136,6 +142,7 @@ export function App() {
               onMembership={() => openMembership('home')}
               onCalendar={() => setScreen('calendar')}
               onAppSettings={() => setAppSettingsOpen(true)}
+              onSoundSettings={openSoundSettings}
             />
           )}
           {screen === 'calendar' && (
@@ -143,8 +150,8 @@ export function App() {
           )}
           {screen === 'companions' && <CompanionSetupScreen key="companions" onBack={onboarding ? undefined : () => setScreen('home')} onDone={() => setScreen(onboarding ? 'select' : 'home')} />}
           {screen === 'intro' && <IntroScreen key="intro" onStart={() => setScreen('companions')} />}
-          {screen === 'cafe' && <CafeScreen key="cafe" characterId={characterId} onBack={() => setScreen('home')} onChangeFriends={() => setScreen('companions')} />}
-          {screen === 'library' && <LibraryScreen key="library" characterId={characterId} onBack={() => setScreen('home')} onChangeFriends={() => setScreen('companions')} />}
+          {screen === 'cafe' && <CafeScreen key="cafe" characterId={characterId} onBack={() => setScreen('home')} onChangeFriends={() => setScreen('companions')} onSoundSettings={openSoundSettings} />}
+          {screen === 'library' && <LibraryScreen key="library" characterId={characterId} onBack={() => setScreen('home')} onChangeFriends={() => setScreen('companions')} onSoundSettings={openSoundSettings} />}
           {screen === 'select' && (
             <CharacterSelectScreen
               key="select"
@@ -159,9 +166,9 @@ export function App() {
               else setScreen('home');
             }} onEnd={() => setStopRequest('stop')} onRecords={() => setScreen('records')} />
           )}
-          {screen === 'museum' && <MuseumScreen key="museum" characterId={characterId} onBack={() => setScreen('home')} />}
+          {screen === 'museum' && <MuseumScreen key="museum" characterId={characterId} onBack={() => setScreen('home')} onSoundSettings={openSoundSettings} />}
           {screen === 'my-room' && (
-            <RoomScreen key="my-room" characterId={characterId} onBack={() => setScreen('home')} onMembership={() => openMembership('my-room')} onChangeCharacter={(id) => (setCharacterId(id), save('character', id))} />
+            <RoomScreen key="my-room" characterId={characterId} onBack={() => setScreen('home')} onMembership={() => openMembership('my-room')} onChangeCharacter={(id) => (setCharacterId(id), save('character', id))} onSoundSettings={openSoundSettings} />
           )}
           {screen === 'records' && <RecordsScreen key="records" onBack={() => setScreen('home')} onStudy={() => openClassroom()} />}
           {screen === 'membership' && <ShopScreen key="membership" onBack={() => setScreen(membershipFrom)} onStudy={() => openClassroom()} />}
@@ -177,6 +184,7 @@ export function App() {
           setStopRequest(null);
         }} />}
         <PwaPanel open={appSettingsOpen} onClose={()=>setAppSettingsOpen(false)} active={Boolean(focusTimer.session && focusTimer.session.stage!=='complete')} notifications={phoneNotifications}/>
+        <BackgroundSoundPanel open={soundSettingsOpen} onClose={() => setSoundSettingsOpen(false)} />
         {phoneNotifications.syncError && screen==='classroom' && <button type="button" className="notification-warning" onClick={()=>setAppSettingsOpen(true)}>Phone reminders need sync · Manage</button>}
       </div>
     </MotionConfig>

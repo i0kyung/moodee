@@ -7,6 +7,10 @@ declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: {url:string;revi
 cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
 registerRoute(new NavigationRoute(createHandlerBoundToURL('index.html'), { denylist: [/\?(?:.*&)?(?:code|error|oauth_destination)=/] }));
+// Web Audio loads full files with fetch (destination is empty, not "audio").
+// Cache only tracks the user visits rather than downloading all music on install.
+registerRoute(({url,request}) => request.method === 'GET' && url.origin === self.location.origin && url.pathname.includes('/assets/audio/'),
+  new CacheFirst({cacheName:'moodee-room-audio-v1',plugins:[new ExpirationPlugin({maxEntries:6,maxAgeSeconds:30*86400,purgeOnQuotaError:true})]}));
 registerRoute(({url,request}) => url.origin === self.location.origin && url.pathname.includes('/assets/') && ['image','audio'].includes(request.destination),
   new CacheFirst({cacheName:'moodee-world-v1',plugins:[new ExpirationPlugin({maxEntries:150,maxAgeSeconds:30*86400,purgeOnQuotaError:true})]}));
 self.addEventListener('message', event => { if (event.data?.type === 'SKIP_WAITING') void self.skipWaiting(); });

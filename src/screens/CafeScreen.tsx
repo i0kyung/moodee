@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { CharacterSprite } from '../components/CharacterSprite';
 import { Sparkles } from '../components/Coin';
 import { BoardCafe } from '../boardcafe/BoardCafe';
+import { BackgroundSoundButton } from '../components/BackgroundSound';
 import { BackIcon, PeopleIcon } from '../components/Icons';
 import { getCharacter, PLAYABLE, type CharacterId } from '../data/characters';
 import { getCompanions } from '../lib/companions';
@@ -69,10 +70,11 @@ type Mode = 'top' | 'maker' | 'table';
 interface Props {
   characterId: CharacterId | null;
   onBack: () => void;
+  onSoundSettings: () => void;
   onChangeFriends: () => void;
 }
 
-export function CafeScreen({ characterId, onBack, onChangeFriends }: Props) {
+export function CafeScreen({ characterId, onBack, onChangeFriends, onSoundSettings }: Props) {
   const character = getCharacter(characterId);
   const [mode, setMode] = useState<Mode>('top');
   const [drink, setDrink] = useState<CafeDrink | null>(() => loadValue<CafeDrink | null>('cafeDrink', null));
@@ -184,9 +186,12 @@ export function CafeScreen({ characterId, onBack, onChangeFriends }: Props) {
           <BackIcon />
         </button>
         <span className={hud.chip}>Café</span>
-        <button type="button" className={hud.count} onClick={() => setFriendsOpen(true)} aria-label={`${npcs.length + 1} people here. Friends`}>
-          <PeopleIcon /> {npcs.length + 1}
-        </button>
+        <div className={hud.topActions}>
+          <button type="button" className={hud.count} onClick={() => setFriendsOpen(true)} aria-label={`${npcs.length + 1} people here. Friends`}>
+            <PeopleIcon /> {npcs.length + 1}
+          </button>
+          <BackgroundSoundButton dark onClick={onSoundSettings} />
+        </div>
       </header>
 
       <AnimatePresence>

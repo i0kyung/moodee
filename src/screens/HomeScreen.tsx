@@ -13,6 +13,7 @@ import { getCompanions } from '../lib/companions';
 import { useWallet } from '../lib/wallet';
 import { dueGuestPlans } from '../lib/calendar';
 import styles from './HomeScreen.module.css';
+import { BackgroundSoundButton } from '../components/BackgroundSound';
 
 interface Props {
   characterId: CharacterId | null;
@@ -22,6 +23,7 @@ interface Props {
   onMembership: () => void;
   onCalendar: () => void;
   onAppSettings: () => void;
+  onSoundSettings: () => void;
 }
 
 const logo = `${import.meta.env.BASE_URL}assets/brand/logo.png`;
@@ -34,7 +36,7 @@ const greeting = (name: string) => {
   return <>{word}, <b>{name}</b></>;
 };
 
-export function HomeScreen({ characterId, onGo, onChangeCharacter, onRecords, onMembership, onCalendar, onAppSettings }: Props) {
+export function HomeScreen({ characterId, onGo, onChangeCharacter, onRecords, onMembership, onCalendar, onAppSettings, onSoundSettings }: Props) {
   const wallet = useWallet();
   const character = getCharacter(characterId);
   const streak = readStreak();
@@ -99,6 +101,7 @@ export function HomeScreen({ characterId, onGo, onChangeCharacter, onRecords, on
 
       <div className={styles.brand}>
         <h1><img src={logo} alt="MOODEE" /></h1>
+        <div className={styles.sound}><BackgroundSoundButton onClick={onSoundSettings} /></div>
       </div>
 
       <div className={styles.info} aria-live="polite">

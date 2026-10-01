@@ -2,6 +2,7 @@
 // 탑뷰 전시장에서 걸어 다니며 내 기억 전시대를 보고, 입구 앞 카메라 지점에서 새 기억을 찍어 전시대에 올린다
 import { AnimatePresence, motion } from 'framer-motion';
 import { useMemo, useState } from 'react';
+import { BackgroundSoundButton } from '../components/BackgroundSound';
 import { BackIcon, PeopleIcon } from '../components/Icons';
 import { EXHIBIT_OBJECTS, type ExhibitObjectId } from '../config/economy';
 import { getCharacter, PLAYABLE, type CharacterId } from '../data/characters';
@@ -62,9 +63,10 @@ const img = (id: string) => EXHIBIT_OBJECTS[id as ExhibitObjectId]?.img;
 interface Props {
   characterId: CharacterId | null;
   onBack: () => void;
+  onSoundSettings: () => void;
 }
 
-export function MuseumScreen({ characterId, onBack }: Props) {
+export function MuseumScreen({ characterId, onBack, onSoundSettings }: Props) {
   const character = getCharacter(characterId);
   const [memories, setMemories] = useState<Memory[]>(listMemories);
   const [camera, setCamera] = useState(false);
@@ -154,9 +156,12 @@ export function MuseumScreen({ characterId, onBack }: Props) {
           <BackIcon />
         </button>
         <span className={hud.chip}>Museum</span>
-        <span className={hud.count} aria-label={`${npcs.length + 1} people here`}>
-          <PeopleIcon /> {npcs.length + 1}
-        </span>
+        <div className={hud.topActions}>
+          <span className={hud.count} aria-label={`${npcs.length + 1} people here`}>
+            <PeopleIcon /> {npcs.length + 1}
+          </span>
+          <BackgroundSoundButton dark onClick={onSoundSettings} />
+        </div>
       </header>
 
       <AnimatePresence>
