@@ -1,6 +1,6 @@
 // 홈: 장소 휠을 돌려 갈 곳을 고른다. 시선 순서는 장소 > 캐릭터 > 행동 버튼 > 브랜드
 import { AnimatePresence, motion } from 'framer-motion';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CharacterSprite } from '../components/CharacterSprite';
 import { CoinIcon, FlameIcon } from '../components/Icons';
 import { PlaceWheel } from '../components/PlaceWheel';
@@ -11,6 +11,7 @@ import { screenMotion } from '../lib/motion';
 import { readStreak } from '../lib/streak';
 import { getCompanions } from '../lib/companions';
 import { useWallet } from '../lib/wallet';
+import { dueGuestPlans } from '../lib/calendar';
 import styles from './HomeScreen.module.css';
 
 interface Props {
@@ -19,6 +20,7 @@ interface Props {
   onChangeCharacter: () => void;
   onRecords: () => void;
   onMembership: () => void;
+  onCalendar: () => void;
 }
 
 const logo = `${import.meta.env.BASE_URL}assets/brand/logo.png`;
@@ -31,14 +33,22 @@ const greeting = (name: string) => {
   return <>{word}, <b>{name}</b></>;
 };
 
-export function HomeScreen({ characterId, onGo, onChangeCharacter, onRecords, onMembership }: Props) {
+export function HomeScreen({ characterId, onGo, onChangeCharacter, onRecords, onMembership, onCalendar }: Props) {
   const wallet = useWallet();
   const character = getCharacter(characterId);
   const streak = readStreak();
   const [index, setIndex] = useState(() => Math.max(0, PLACES.findIndex((p) => p.id === loadValue('lastPlace', 'classroom'))));
   const [walking, setWalking] = useState(false);
   const [going, setGoing] = useState(false);
+  const [dueCount, setDueCount] = useState(() => dueGuestPlans().length);
   const place = PLACES[index];
+
+  useEffect(() => {
+    const update = () => setDueCount(dueGuestPlans().length);
+    const timer = window.setInterval(update, 60_000);
+    window.addEventListener('focus', update);
+    return () => { window.clearInterval(timer); window.removeEventListener('focus', update); };
+  }, []);
 
   const changeIndex = (i: number) => {
     setIndex(i);
@@ -87,9 +97,12 @@ export function HomeScreen({ characterId, onGo, onChangeCharacter, onRecords, on
       </header>
 
       <div className={styles.brand}>
-        <h1>
-          <img src={logo} alt="MOODEE" />
-        </h1>
+        <div className={styles.brandRow}>
+          <h1><img src={logo} alt="MOODEE" /></h1>
+          <button type="button" className={styles.calendarButton} onClick={onCalendar} aria-label={dueCount ? `Open Calendar, ${dueCount} local reminder${dueCount === 1 ? '' : 's'} due` : 'Open Calendar'}>
+            <span aria-hidden>▦</span> Calendar{dueCount > 0 && <i className={styles.dueDot} aria-hidden />}
+          </button>
+        </div>
       </div>
 
       <div className={styles.info} aria-live="polite">

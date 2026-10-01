@@ -23,12 +23,14 @@ import { loadValue, save } from '../lib/storage';
 import { completeSession } from '../lib/streak';
 import { earn, markStampReady } from '../lib/wallet';
 import { screenMotion } from '../lib/motion';
+import type { SessionIntent } from '../lib/calendar';
 import styles from './ClassroomScreen.module.css';
 
 interface Props {
   characterId: CharacterId | null;
   onExit: () => void;
   onRecords: () => void;
+  intent: SessionIntent;
 }
 
 type Phase = 'explore' | 'sitting' | 'sounds' | 'plan' | 'focus';
@@ -51,7 +53,7 @@ const fmt = (ms: number) => {
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 };
 
-export function ClassroomScreen({ characterId, onExit, onRecords }: Props) {
+export function ClassroomScreen({ characterId, intent, onExit, onRecords }: Props) {
   const character = getCharacter(characterId);
   const { settings, playing, start, stop } = useSoundscape();
   const [phase, setPhase] = useState<Phase>('explore');
@@ -61,7 +63,7 @@ export function ClassroomScreen({ characterId, onExit, onRecords }: Props) {
 
   // ── 세션 계획 ──
   const [minutes, setMinutes] = useState(() => loadValue('focusMinutes', 25));
-  const [subject, setSubject] = useState(() => loadValue('lastSubject', ''));
+  const [subject, setSubject] = useState(intent.text);
 
   // ── 타이머 ──
   const [status, setStatus] = useState<TimerStatus>('running');
@@ -216,6 +218,10 @@ export function ClassroomScreen({ characterId, onExit, onRecords }: Props) {
         </div>
       </header>
 
+      <div className={styles.intentBadge} aria-label={`Session goal: ${subject}`}>
+        <span>MY ONE THING</span>
+        <b>{subject}</b>
+      </div>
 
       {/* 집중 중 HUD: 미니맵·소리 아이콘·데모 채팅 */}
       {phase === 'focus' && seat && !done && (
