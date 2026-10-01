@@ -12,10 +12,13 @@
     "test:rules": "node scripts/test-rules.mts"
   },
   "dependencies": {
+    "@radix-ui/react-scroll-area": "^1.2.18",
     "@supabase/supabase-js": "2.117.2",
     "framer-motion": "^13.4.5",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@testing-library/react": "16.3.3",

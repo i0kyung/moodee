@@ -1,12 +1,39 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, expect, it, vi } from 'vitest';
+// jsdom has no layout engine; browser scroll sizing is checked visually.
+beforeAll(()=>vi.stubGlobal('ResizeObserver',class {observe(){} unobserve(){} disconnect(){}}));
+afterAll(()=>vi.unstubAllGlobals());
 const auth=vi.hoisted(()=>({user:{id:'alice',is_anonymous:false},hasSession:true,pending:null as Promise<{text:string}>|null}));
 vi.mock('../lib/auth',()=>({supabase:{auth:{getSession:async()=>({data:{session:auth.hasSession?auth:null}}),onAuthStateChange:()=>({data:{subscription:{unsubscribe:()=>{}}}})}},beginGoogleOAuth:vi.fn()}));
 vi.mock('../lib/tutorClient',()=>({TutorRequestError:class extends Error {},tutorConfigured:true,callTutor:async(action:string)=> action==='status'?{usage:{used:0,limit:30,remaining:30,globalUsed:0,globalLimit:300,resetsAt:'2026-10-01T17:00:00Z'}}:action==='ask'?(auth.pending??{text:'Cells are the building blocks of life.'}):{quiz:{questions:[0,1,2].map(n=>({question:`Question ${n+1}`,choices:['A','B','C','D'],correctIndex:n,explanation:'Explanation',topic:'Cells'}))}}}));
 import { TutorPanel } from './TutorPanel';
 afterEach(()=>{cleanup();localStorage.clear();auth.pending=null;auth.hasSession=true;});
 const open=()=>render(<TutorPanel open onClose={()=>{}} goal="Biology" session={null} onPause={()=>{}} />);
+it('renders Tutor Markdown as readable headings, lists, code and tables',async()=>{
+  auth.pending=Promise.resolve({text:'## Cell basics\n\n**Cells** use `ATP` for energy.\n\n- Read the chapter\n- Try an example\n\n```js\nconst energy = "ATP";\n```\n\n| Part | Role |\n| --- | --- |\n| Nucleus | DNA |'});
+  open();await screen.findByText('30 requests left today');
+  fireEvent.change(screen.getByRole('textbox',{name:'Your question'}),{target:{value:'Explain cells'}});
+  fireEvent.click(screen.getByRole('button',{name:'Send question'}));
+  const log=screen.getByRole('log',{name:'Tutor conversation'});
+  await within(log).findByRole('heading',{name:'Cell basics'});
+  expect(within(log).getByText('Cells').tagName).toBe('STRONG');
+  expect(within(log).getAllByRole('listitem')).toHaveLength(2);
+  expect(within(log).getByText('const energy = "ATP";').tagName).toBe('CODE');
+  expect(within(log).getByRole('table').textContent).toContain('Nucleus');
+});
+it('keeps model HTML, unsafe links and remote images inert',async()=>{
+  auth.pending=Promise.resolve({text:'Useful [reference](https://example.com/lesson). [unsafe](javascript:alert(1))\n\n<img src="https://example.com/track" onerror="alert(1)">\n\n![Diagram](https://example.com/diagram.png)'});
+  open();await screen.findByText('30 requests left today');
+  fireEvent.change(screen.getByRole('textbox',{name:'Your question'}),{target:{value:'Show a reference'}});
+  fireEvent.click(screen.getByRole('button',{name:'Send question'}));
+  const log=screen.getByRole('log',{name:'Tutor conversation'});
+  const link=await within(log).findByRole('link',{name:'reference'});
+  expect(link.getAttribute('href')).toBe('https://example.com/lesson');
+  expect(link.getAttribute('rel')).toContain('noopener');
+  expect(log.querySelector('img, script, [onerror], a[href^="javascript:"]')).toBeNull();
+  expect(within(log).getByText('Diagram')).toBeTruthy();
+});
 it('allows guests to send immediately without login or CAPTCHA and retains failed drafts',async()=>{
   auth.hasSession=false;
   open();

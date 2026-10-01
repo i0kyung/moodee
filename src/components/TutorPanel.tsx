@@ -4,6 +4,8 @@ import { callTutor, tutorConfigured, TutorRequestError } from '../lib/tutorClien
 import { clearHistory, createConversation, deleteConversation, readHistory, writeConversation, type TutorConversation, type TutorUsage } from '../lib/tutorHistory';
 import { formatCountdown, type FocusSession } from '../lib/focusSession';
 import { Sheet } from './Sheet';
+import { ScrollArea } from './ScrollArea';
+import { TutorMarkdown } from './TutorMarkdown';
 import styles from './TutorPanel.module.css';
 
 interface Props {open:boolean;onClose:()=>void;goal:string;session:FocusSession|null;onPause:()=>void;resetRevision?:number;initialMessage?:string}
@@ -77,7 +79,7 @@ export function TutorPanel({open,onClose,goal,session,onPause,resetRevision=0,in
   const newConversation=()=>{if(busy)return;setConversation(createConversation(goal));setDraft('');setMessage('');setTab('Ask');};
   return <div ref={box} className={styles.viewport}>
     <Sheet open={open} onClose={onClose} title="Tutor" subtitle="A little help for your next step." action={<button className={styles.close} type="button" onClick={onClose} aria-label="Close Tutor">×</button>}>
-      <div className={styles.body}>
+      <ScrollArea className={styles.body} aria-label="Tutor panel content">
         <div className={styles.session}><span>{session?`${session.stage==='focus'?'Focus':'Break'} · ${formatCountdown(session.remainingMs)}`:'Before your session'}</span>{session?.stage==='focus' && <button type="button" onClick={onPause}>{session.status==='paused'?'Resume timer':'Pause timer'}</button>}</div>
         <div className={styles.tabs} role="tablist" aria-label="Tutor modes">{(['Ask','Quiz me','History'] as Tab[]).map(t=><button type="button" key={t} role="tab" aria-selected={tab===t} onClick={()=>{setTab(t);setConfirmClear(false);}}>{t}</button>)}</div>
         <p className={styles.notice}>Your questions are sent to AI. Answers can be mistaken. History stays on this device.</p>
@@ -94,7 +96,7 @@ export function TutorPanel({open,onClose,goal,session,onPause,resetRevision=0,in
           <label className={styles.label}>Study topic<input aria-label="Study topic" value={conversation.topic} maxLength={300} disabled={busy || Boolean(conversation.quiz)} onChange={e=>setConversation(c=>({...c,topic:e.target.value}))} placeholder="e.g. Cell biology" /></label>
           {!conversation.quiz && <details className={styles.notes}><summary>Add study notes (optional)</summary><textarea aria-label="Study notes" maxLength={8000} value={conversation.notes} disabled={busy} onChange={e=>setConversation(c=>({...c,notes:e.target.value}))} placeholder="Paste the material you want to discuss or practice." /><small>{conversation.notes.length}/8000</small></details>}
           {tab==='Ask'?<>
-            <div ref={list} className={styles.messages} role="log" aria-label="Tutor conversation" aria-live="polite">{conversation.messages.map((m,n)=><div key={n} className={m.role==='user'?styles.mine:styles.reply}><b>{m.role==='user'?'You':'Tutor'}</b><p>{m.text}</p></div>)}{busy && <p role="status">Tutor is thinking…</p>}</div>
+            {(conversation.messages.length > 0 || busy) && <ScrollArea ref={list} className={styles.messages} role="log" aria-label="Tutor conversation" aria-live="polite"><div className={styles.messageContent}>{conversation.messages.map((m,n)=><div key={n} className={m.role==='user'?styles.mine:styles.reply}><b className={styles.speaker}>{m.role==='user'?'You':'Tutor'}</b>{m.role==='assistant'?<TutorMarkdown text={m.text}/>:<p className={styles.userText}>{m.text}</p>}</div>)}{busy && <p role="status">Tutor is thinking…</p>}</div></ScrollArea>}
             {!conversation.messages.length && <div className={styles.starters}>{['Explain a concept','Give an example','Help me understand'].map(s=><button type="button" key={s} disabled={busy} onClick={()=>setDraft(`${s}${conversation.topic?` about ${conversation.topic}`:''}: `)}>{s}</button>)}</div>}
             <form className={styles.composer} onSubmit={e=>{e.preventDefault();void run('ask');}}><textarea aria-label="Your question" value={draft} maxLength={4000} disabled={busy} onChange={e=>setDraft(e.target.value)} placeholder="What would you like to understand?" /><div><small>{draft.length}/4000</small><button type="submit" className="pill pill-primary" aria-label="Send question" disabled={blocked || !draft.trim()}>Send</button></div></form>
           </>:<section className={styles.quiz} aria-label="Practice quiz">
@@ -105,7 +107,7 @@ export function TutorPanel({open,onClose,goal,session,onPause,resetRevision=0,in
           <div className={styles.footer}><button type="button" onClick={newConversation} disabled={busy}>New conversation</button>{guest && <button type="button" disabled={Boolean(session) || busy || !tutorConfigured} onClick={()=>void beginGoogleOAuth('tutor').catch(e=>setMessage(e.message))}>Sign in with Google</button>}</div>
           {guest && session && <small className={styles.notice}>Google sign-in is available after this session ends.</small>}
         </>}
-      </div>
+      </ScrollArea>
     </Sheet>
   </div>;
 }

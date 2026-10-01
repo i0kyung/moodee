@@ -33,3 +33,10 @@ Approved brief: separate Classroom Tutor button; Ask, three-question quizzes and
 - Actual one-minute Classroom timer kept counting while Tutor was open. Guest request failed at anonymous authentication; draft remained available. Live OpenAI responses cannot be verified until Supabase guest access is configured.
 - Private usage migration applied to linked Supabase project and tutor function deployed. Endpoint rejects unauthenticated requests; frontend carries no OpenAI secret.
 - Follow-up operations: prune unused anonymous accounts and old quota rows according to the project's retention policy. No scheduled deletion added.
+
+## Tutor UI revision
+
+- Replaced browser scrollbars in the Tutor panel, conversation, tables and code blocks with custom lavender rails and draggable thumbs. Native wheel, touch and keyboard scrolling remains available. Textarea scrollbars use matching colors.
+- Tutor replies render Markdown headings, emphasis, lists, quotes, links, tables and code with MOODEE typography. User messages remain plain text; raw model HTML is skipped and remote images do not load automatically.
+- Added regression tests for formatted replies and inert HTML/unsafe URLs; all 101 tests and 29 rules checks pass, as does TypeScript/production build.
+- Visual checks used the real panel and an explicitly labelled local sample-answer fixture, including 320×568. Verified vertical and horizontal thumb dragging and overflow sizing. Live guest access still fails at Supabase authentication; this revision changes frontend presentation only.
