@@ -36,9 +36,9 @@ npx supabase functions deploy calendar --no-verify-jwt --use-api
 
 Ganti `YOUR_PROJECT_REF` dengan ID project dari URL dashboard `https://supabase.com/dashboard/project/YOUR_PROJECT_REF`. Periksa ID sebelum `db push`, karena perintah itu menerapkan migrasi ke database project yang terhubung. Bila migrasi SQL sudah dijalankan lewat SQL Editor, lewati `db push`. Pastikan keempat secret pada langkah 5 muncul di `secrets list` sebelum deploy; daftar itu menampilkan nama secret, bukan nilainya. Opsi `--use-api` melakukan bundling tanpa Docker. Setelah berhasil, fungsi tersedia di `https://YOUR_PROJECT_REF.supabase.co/functions/v1/calendar`. Untuk pengujian, buka aplikasi dan gunakan tombol **Connect**; pemanggilan `calendar` tanpa sesi Supabase akan ditolak oleh fungsi.
 
-Untuk frontend lokal, salin [`.env.example`](../.env.example) menjadi `.env.local` dan isi **hanya** `VITE_SUPABASE_URL` dan publishable/anon key. Jalankan `npm run dev`. Untuk **Edge Function lokal** (`supabase start` atau `supabase functions serve`), buat file terpisah `supabase/functions/.env` berisi `GOOGLE_TOKEN_ENCRYPTION_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, dan `APP_ORIGINS`. File tersebut diabaikan Git. Dua nilai `VITE_` memang publik; kredensial Google dan service role key tidak boleh menggunakan prefiks `VITE_`.
+Untuk frontend lokal, salin [`.env.example`](../.env.example) menjadi `.env.local` dan isi `VITE_SUPABASE_URL` serta `VITE_SUPABASE_PUBLISHABLE_KEY`. Nama lama `VITE_SUPABASE_ANON_KEY` juga didukung. Jalankan `npm run dev`. Untuk **Edge Function lokal** (`supabase start` atau `supabase functions serve`), buat file terpisah `supabase/functions/.env` berisi `GOOGLE_TOKEN_ENCRYPTION_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, dan `APP_ORIGINS`. File tersebut diabaikan Git. Dua nilai `VITE_` memang publik; kredensial Google dan service role key tidak boleh menggunakan prefiks `VITE_`.
 
-Untuk build GitHub Pages, tambahkan repository **Variables** `VITE_SUPABASE_URL` dan `VITE_SUPABASE_ANON_KEY`. Workflow build membacanya saat `main` nanti dideploy. Branch fitur ini tidak memicu deployment `main`.
+Untuk build GitHub Pages, tambahkan repository **Variables** `VITE_SUPABASE_URL` dan `VITE_SUPABASE_PUBLISHABLE_KEY` (atau nama lama `VITE_SUPABASE_ANON_KEY`). Workflow build membacanya saat `main` nanti dideploy. Branch fitur ini tidak memicu deployment `main`.
 
 ## 3. Uji koneksi langsung setelah konfigurasi
 
@@ -55,6 +55,6 @@ Untuk build GitHub Pages, tambahkan repository **Variables** `VITE_SUPABASE_URL`
 - MOODEE hanya membuat/mengubah/menghapus acara di kalender sekunder **MOODEE**. Kalender Google lain dibaca saja. Perubahan bersamaan ditolak melalui ETag; aplikasi memuat versi terbaru dan pengguna mengulang suntingan.
 - Disconnect mencabut refresh token dan menghapus hubungan akun di Supabase. Kalender dan acara yang sudah ada tetap berada di Google Calendar; bila akun yang sama terhubung lagi, kalender MOODEE yang ada dipakai ulang.
 - Token Google melewati browser sementara selama OAuth Supabase, tetapi penyimpanan sesi menyaring `provider_token` dan `provider_refresh_token`. Refresh token kemudian dikirim sekali ke Edge Function, dienkripsi dengan AES-GCM, dan tidak dikembalikan di respons agenda.
-- Pengujian otomatis memakai respons Google tiruan. Verifikasi OAuth dan pengingat langsung **belum dapat dilakukan** sampai project Google Cloud dan Supabase penguji tersedia.
+- Pengujian otomatis memakai respons Google tiruan. OAuth dan pengingat langsung perlu diuji memakai akun yang termasuk **Test users** setelah backend dideploy.
 
 Referensi: [scope Google Calendar](https://developers.google.com/workspace/calendar/api/auth), [pengingat acara](https://developers.google.com/workspace/calendar/api/concepts/reminders), [OAuth Google di Supabase](https://supabase.com/docs/guides/auth/social-login/auth-google), [batas mode Testing](https://support.google.com/cloud/answer/15549945).
