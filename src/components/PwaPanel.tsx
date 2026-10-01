@@ -17,7 +17,7 @@ export function PwaPanel({open,onClose,active,notifications:n}:Props) {
     window.addEventListener('beforeinstallprompt',install);window.addEventListener('appinstalled',done);window.addEventListener('moodee:pwa-update',refreshed);
     return()=>{window.removeEventListener('beforeinstallprompt',install);window.removeEventListener('appinstalled',done);window.removeEventListener('moodee:pwa-update',refreshed);};
   },[]);
-  return <Sheet open={open} onClose={onClose} title="Take MOODEE with you" subtitle="A little space on your home screen." action={<button className={styles.close} onClick={onClose} aria-label="Close app settings">×</button>}>
+  return <div className={styles.layer} style={{pointerEvents:open?'auto':'none'}}><Sheet open={open} onClose={onClose} title="Take MOODEE with you" subtitle="A little space on your home screen." action={<button className={styles.close} onClick={onClose} aria-label="Close app settings">×</button>}>
     <ScrollArea className={styles.scroll}><div className={styles.content}>
       <section className={styles.card}><span className={styles.eyebrow}>YOUR COZY APP</span><h3>{installed?'MOODEE is installed':'Add to your home screen'}</h3>
         <p>{installed?'Open MOODEE from its icon whenever you need a little focus.':iosDevice()?'In Safari, tap Share → Add to Home Screen → Add. Then open MOODEE from its new icon.':'Install MOODEE for an app window of its own. You can also use your browser’s Install app or Add to Home Screen menu.'}</p>
@@ -34,5 +34,5 @@ export function PwaPanel({open,onClose,active,notifications:n}:Props) {
       {update && <section className={styles.card}><h3>A fresh MOODEE is ready</h3><p>{active?'Finish your session to update. Your timer keeps its place.':'Update when you’re ready.'}</p><button className="pill pill-soft" disabled={active} onClick={()=>void applyUpdate()}>Update app</button></section>}
       <p className={styles.small}>Visited rooms can reopen offline. Tutor, Google Calendar, and scheduling phone reminders need an internet connection.</p>
     </div></ScrollArea>
-  </Sheet>;
+  </Sheet></div>;
 }
