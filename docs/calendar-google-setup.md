@@ -38,7 +38,7 @@ Ganti `YOUR_PROJECT_REF` dengan ID project dari URL dashboard `https://supabase.
 
 Untuk frontend lokal, salin [`.env.example`](../.env.example) menjadi `.env.local` dan isi `VITE_SUPABASE_URL` serta `VITE_SUPABASE_PUBLISHABLE_KEY`. Nama lama `VITE_SUPABASE_ANON_KEY` juga didukung. Jalankan `npm run dev`. Untuk **Edge Function lokal** (`supabase start` atau `supabase functions serve`), buat file terpisah `supabase/functions/.env` berisi `GOOGLE_TOKEN_ENCRYPTION_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, dan `APP_ORIGINS`. File tersebut diabaikan Git. Dua nilai `VITE_` memang publik; kredensial Google dan service role key tidak boleh menggunakan prefiks `VITE_`.
 
-Untuk build GitHub Pages, tambahkan repository **Variables** `VITE_SUPABASE_URL` dan `VITE_SUPABASE_PUBLISHABLE_KEY` (atau nama lama `VITE_SUPABASE_ANON_KEY`). Workflow build membacanya saat `main` nanti dideploy. Branch fitur ini tidak memicu deployment `main`.
+Untuk build GitHub Pages, simpan `VITE_SUPABASE_URL` dan `VITE_SUPABASE_PUBLISHABLE_KEY` di repository **Actions Secrets** atau **Actions Variables**. Workflow memakai Secrets lebih dahulu, lalu Variables sebagai cadangan; nama lama `VITE_SUPABASE_ANON_KEY` juga didukung. Nilai `VITE_` masuk ke bundle browser sehingga hanya URL project dan publishable/anon key yang boleh dipakai di sini. Jangan masukkan Google Client Secret, service role key, atau `GOOGLE_TOKEN_ENCRYPTION_KEY`. Setiap push ke `main` membangun ulang GitHub Pages; workflow akan gagal dengan pesan jelas bila dua nilai publik yang diperlukan tidak tersedia.
 
 ## 3. Uji koneksi langsung setelah konfigurasi
 
