@@ -16,6 +16,8 @@
   background: var(--cream);
   box-shadow: 0 -10px 40px rgba(46, 42, 42, 0.18);
 }
+.belowHeader { top: calc(var(--safe-top) + 74px); }
+.belowHeader .sheet { max-height: 100%; }
 
 .gripArea {
   padding: 8px 0 10px;

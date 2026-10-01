@@ -19,12 +19,19 @@ import { MuseumScreen } from './screens/MuseumScreen';
 import { RoomScreen } from './screens/RoomScreen';
 import { RecordsScreen } from './screens/RecordsScreen';
 import { CalendarScreen } from './screens/CalendarScreen';
+import { useFocusSession } from './lib/useFocusSession';
+import { BreakTimer, SessionExitDialog } from './components/SessionOverlays';
 
 type Screen = 'intro' | 'home' | 'companions' | 'select' | 'classroom' | 'cafe' | 'library' | 'museum' | 'my-room' | 'records' | 'membership' | 'calendar';
 
 const SPLASH_SECONDS = 2.2;
 
 export function App() {
+  const focusTimer = useFocusSession();
+  const [stopRequest, setStopRequest] = useState<'exit' | 'stop' | null>(null);
+  useEffect(() => {
+    if (!focusTimer.session || focusTimer.session.stage === 'complete') setStopRequest(null);
+  }, [focusTimer.session?.stage]);
   const [characterId, setCharacterId] = useState<CharacterId | null>(() => loadValue<CharacterId | null>('character', null));
   const [screen, setScreen] = useState<Screen>('intro');
   // 앱을 열면 인트로 → 친구 수 → 캐릭터 고르기 순서로 한 번 지나간다
@@ -71,6 +78,7 @@ export function App() {
   };
 
   const openClassroom = (text = '', eventId?: string, date?: string) => {
+    if (focusTimer.session) { setScreen('classroom'); return; }
     setClassroomSuggestion({ text, eventId, date });
     setScreen('classroom');
   };
@@ -118,8 +126,11 @@ export function App() {
               onConfirm={chooseCharacter}
             />
           )}
-          {screen === 'classroom' && (
-            <ClassroomScreen key="classroom" characterId={characterId} initialSubject={classroomSuggestion.text} initialEventId={classroomSuggestion.eventId} agendaDate={classroomSuggestion.date} onExit={() => setScreen('home')} onRecords={() => setScreen('records')} />
+          {(screen === 'classroom' || focusTimer.session !== null) && (
+            <ClassroomScreen key="classroom" visible={screen === 'classroom'} focusTimer={focusTimer} characterId={characterId} initialSubject={classroomSuggestion.text} initialEventId={classroomSuggestion.eventId} agendaDate={classroomSuggestion.date} onExit={() => {
+              if (focusTimer.session?.stage === 'focus') setStopRequest('exit');
+              else setScreen('home');
+            }} onEnd={() => setStopRequest('stop')} onRecords={() => setScreen('records')} />
           )}
           {screen === 'museum' && <MuseumScreen key="museum" characterId={characterId} onBack={() => setScreen('home')} />}
           {screen === 'my-room' && (
@@ -129,6 +140,15 @@ export function App() {
           {screen === 'membership' && <ShopScreen key="membership" onBack={() => setScreen(membershipFrom)} onStudy={() => openClassroom()} />}
         </AnimatePresence>
         <AnimatePresence>{splash && <LoadingSplash key={splash.image} {...splash} duration={SPLASH_SECONDS - 0.3} />}</AnimatePresence>
+        {focusTimer.session && !stopRequest && (focusTimer.session.stage === 'return' || (focusTimer.session.stage === 'break' && screen !== 'classroom')) && <BreakTimer session={focusTimer.session} onReturn={() => {
+          setScreen('classroom');
+          if (focusTimer.session?.stage === 'return') focusTimer.returnToFocus();
+        }} onEnd={() => setStopRequest('stop')} />}
+        {stopRequest && <SessionExitDialog kind={stopRequest} onCancel={() => setStopRequest(null)} onConfirm={() => {
+          focusTimer.end();
+          setScreen(stopRequest === 'exit' ? 'home' : 'classroom');
+          setStopRequest(null);
+        }} />}
       </div>
     </MotionConfig>
   );

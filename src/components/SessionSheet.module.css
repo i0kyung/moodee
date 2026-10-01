@@ -39,7 +39,11 @@
 .eventDetails { min-width: 0; display: flex; flex-direction: column; }
 .eventDetails b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
 .eventDetails small { color: #8c818d; font-size: 11px; }
-.input { display: block; width: 100%; min-height: 44px; margin-top: 12px; padding: 0 16px; border: 2px solid #ece9ef; border-radius: 16px; background: #fff; color: var(--charcoal); font: inherit; font-size: 15px; }
+.input { display: block; width: 100%; min-height: 44px; margin-top: 12px; padding: 0 16px; border: 2px solid #ece9ef; border-radius: 16px; background: #fff; color: var(--charcoal); font: inherit; font-size: 16px; }
 .input:focus { outline: none; border-color: #ef9d64; }
 .input::placeholder { color: #b5afb5; }
 .note { margin: 10px 0 0; text-align: center; color: #9c9499; font-size: 12px; font-weight: 700; }
+.back { flex: none; padding: 8px 12px; border-radius: 999px; background: #fff; font-weight: 800; color: #6f6474; }
+.modes { margin-top: 16px; }
+.modes .chip { flex: 1; }
+.pomodoroHint { color: #6f6474; font-weight: 700; font-size: 13px; line-height: 1.5; margin: 12px 2px 0; }

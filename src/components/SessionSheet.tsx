@@ -6,6 +6,7 @@ import { customSubjects, SUBJECT_PRESETS } from '../lib/sessions';
 import { loadValue } from '../lib/storage';
 import { Sheet } from './Sheet';
 import styles from './SessionSheet.module.css';
+import type { FocusMode } from '../lib/focusSession';
 
 interface Props {
   open: boolean;
@@ -16,12 +17,15 @@ interface Props {
   onMinutes: (minutes: number) => void;
   onSubject: (subject: string) => void;
   onStart: () => void;
+  onClose?: () => void;
+  mode?: FocusMode;
+  onMode?: (mode: FocusMode) => void;
 }
 
 // One minute keeps the focus and reward flow easy to demonstrate.
 const DURATIONS = [15, 25, 50, 1];
 
-export function SessionSheet({ open, minutes, subject, initialEventId, agendaDate, onMinutes, onSubject, onStart }: Props) {
+export function SessionSheet({ open, minutes, subject, initialEventId, agendaDate, onMinutes, onSubject, onStart, onClose = () => {}, mode = 'timer', onMode }: Props) {
   const date = agendaDate ?? localDate(new Date());
   const [localPlans, setLocalPlans] = useState<StudyPlan[]>([]);
   const [remoteEvents, setRemoteEvents] = useState<AgendaEvent[]>([]);
@@ -61,7 +65,12 @@ export function SessionSheet({ open, minutes, subject, initialEventId, agendaDat
   };
 
   return (
-    <Sheet open={open} onClose={() => {}} dismissable={false} title="Plan this session" subtitle="Pick a length and one thing to work on.">
+    <Sheet open={open} onClose={onClose} belowHeader title="Plan this session" subtitle="Choose your rhythm and one thing to work on." action={<button type="button" className={styles.back} onClick={onClose} aria-label="Back to seats">Back</button>}>
+      <div className={`${styles.chips} ${styles.modes}`} role="radiogroup" aria-label="Focus rhythm">
+        <button type="button" role="radio" aria-checked={mode === 'timer'} className={`${styles.chip} ${mode === 'timer' ? styles.on : ''}`} onClick={() => onMode?.('timer')}>Timer</button>
+        <button type="button" role="radio" aria-checked={mode === 'pomodoro'} className={`${styles.chip} ${mode === 'pomodoro' ? styles.on : ''}`} onClick={() => onMode?.('pomodoro')}>Pomodoro <small>25 / 5</small></button>
+      </div>
+      {mode === 'pomodoro' ? <p className={styles.pomodoroHint}>25 minutes to focus, 5 minutes to wander. Your break timer follows you between spaces.</p> : <>
       <h3 className={styles.heading}>How long?</h3>
       <div className={styles.chips} role="radiogroup" aria-label="Session length">
         {DURATIONS.map((duration) => (
@@ -70,6 +79,7 @@ export function SessionSheet({ open, minutes, subject, initialEventId, agendaDat
           </button>
         ))}
       </div>
+      </>}
       <h3 className={styles.heading}>What are you studying?</h3>
       {choices.length > 0 && <section className={styles.agenda} aria-label="Plans for this day">
         <div className={styles.agendaHeading}><span>From your calendar</span><small>{usingCachedAgenda ? 'Saved agenda' : new Date(`${date}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}</small></div>
@@ -84,7 +94,7 @@ export function SessionSheet({ open, minutes, subject, initialEventId, agendaDat
         {quickPicks.map((item) => <button key={item} type="button" className={`${styles.chip} ${subject === item && !selectedEventId ? styles.on : ''}`} aria-pressed={subject === item && !selectedEventId} onClick={() => choose(item)}>{item}</button>)}
       </div>
       <input className={styles.input} aria-label="What are you studying?" value={subject} maxLength={300} onChange={(event) => choose(event.target.value)} placeholder="Or type your own — e.g. UX assignment" />
-      <button type="button" className={`pill pill-primary ${styles.start}`} disabled={!subject.trim()} onClick={onStart}>Start {minutes} min</button>
+      <button type="button" className={`pill pill-primary ${styles.start}`} disabled={!subject.trim()} onClick={onStart}>{mode === 'pomodoro' ? 'Start Pomodoro' : `Start ${minutes} min`}</button>
       <p className={styles.note}>Classmates only see what you're studying — no chat.</p>
     </Sheet>
   );

@@ -23,9 +23,9 @@
 .spacer {
   width: 44px;
 }
-.intentBadge { position: relative; z-index: 2; align-self: center; max-width: calc(100% - 80px); margin-top: 8px; padding: 7px 16px; border-radius: 18px; background: var(--card-strong); box-shadow: var(--shadow-soft); text-align: center; pointer-events: none; }
+.intentBadge { position: absolute; z-index: 2; top: calc(var(--safe-top) + 74px); left: 16px; width: calc(100% - 164px); padding: 9px 12px; border-radius: 18px; background: var(--card-strong); box-shadow: var(--shadow-soft); text-align: left; pointer-events: none; }
 .intentBadge span { display: block; color: var(--lavender-deep); font-size: 9px; letter-spacing: .08em; font-weight: 900; }
-.intentBadge b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 900; }
+.intentBadge b { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; font-size: 13px; line-height: 1.35; font-weight: 900; }
 
 /* 현재 자리 표시 + 자리 바꾸기 */
 .chip {
@@ -133,6 +133,11 @@
   margin: 0;
   font-size: 16px;
   font-weight: 800;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 .hint {
   margin: 8px 2px 0;
@@ -145,6 +150,8 @@
   align-items: center;
   gap: 10px;
 }
+.actions .end { padding: 0 16px; }
+.actions :global(.pill) { min-width: 0; font-size: 16px; }
 .actions :global(.icon-btn) {
   flex: none;
   width: 60px;
@@ -326,7 +333,7 @@
 
 /* ── C6 생각 내려놓기: "MY ONE THING" 배지 바로 아래에 뜨는 작은 창(키보드에 가려지지 않게) ── */
 .thoughtBackdrop {
-  --pad-top: calc(var(--safe-top) + 120px);
+  --pad-top: calc(var(--safe-top) + 154px);
   position: absolute;
   inset: 0;
   z-index: 10;

@@ -10,15 +10,16 @@ interface Props {
   subtitle?: string;
   action?: ReactNode; // 제목 오른쪽 버튼
   dismissable?: boolean; // false면 배경을 눌러도 닫히지 않음(필수 단계)
+  belowHeader?: boolean;
   children: ReactNode;
 }
 
-export function Sheet({ open, onClose, title, subtitle, action, dismissable = true, children }: Props) {
+export function Sheet({ open, onClose, title, subtitle, action, dismissable = true, belowHeader = false, children }: Props) {
   const drag = useDragControls();
   return (
     <AnimatePresence>
       {open && (
-        <motion.div className={styles.backdrop} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={dismissable ? onClose : undefined}>
+        <motion.div className={`${styles.backdrop} ${belowHeader ? styles.belowHeader : ''}`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={dismissable ? onClose : undefined}>
           <motion.section
             className={styles.sheet}
             role="dialog"

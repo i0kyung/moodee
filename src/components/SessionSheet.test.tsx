@@ -27,6 +27,23 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
+it('lets the user return to the seats without starting a session', () => {
+  const onClose = vi.fn();
+  render(<SessionSheet open minutes={25} subject="Coding" onClose={onClose} onMinutes={() => {}} onSubject={() => {}} onStart={() => {}} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Back to seats' }));
+  expect(onClose).toHaveBeenCalledOnce();
+});
+
+it('offers Pomodoro separately from a standard timer and requires a goal in either mode', () => {
+  const onMode = vi.fn();
+  const { rerender } = render(<SessionSheet open minutes={50} subject="" mode="timer" onMode={onMode} onMinutes={() => {}} onSubject={() => {}} onStart={() => {}} />);
+  fireEvent.click(screen.getByRole('radio', { name: /Pomodoro/ }));
+  expect(onMode).toHaveBeenCalledWith('pomodoro');
+  rerender(<SessionSheet open minutes={50} subject="" mode="pomodoro" onMode={onMode} onMinutes={() => {}} onSubject={() => {}} onStart={() => {}} />);
+  expect(screen.getByRole('button', { name: 'Start Pomodoro' }).hasAttribute('disabled')).toBe(true);
+  expect(screen.queryByRole('radiogroup', { name: 'Session length' })).toBeNull();
+});
+
 it('asks for an activity only after sitting, and requires a nonblank answer to start', () => {
   const onMinutes = vi.fn();
   const onSubject = vi.fn();

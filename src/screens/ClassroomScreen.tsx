@@ -25,6 +25,8 @@ import { earn, markStampReady } from '../lib/wallet';
 import { screenMotion } from '../lib/motion';
 import { normalizeIntent } from '../lib/calendar';
 import styles from './ClassroomScreen.module.css';
+import { formatCountdown, type FocusMode } from '../lib/focusSession';
+import type { FocusSessionController } from '../lib/useFocusSession';
 
 interface Props {
   characterId: CharacterId | null;
@@ -33,10 +35,12 @@ interface Props {
   initialSubject?: string;
   initialEventId?: string;
   agendaDate?: string;
+  visible: boolean;
+  focusTimer: FocusSessionController;
+  onEnd: () => void;
 }
 
 type Phase = 'explore' | 'sitting' | 'sounds' | 'plan' | 'focus';
-type TimerStatus = 'running' | 'paused';
 interface Done {
   sessionId: string;
   streak: number;
@@ -50,12 +54,7 @@ interface Done {
 const coinsImg = `${import.meta.env.BASE_URL}assets/rewards/coins.png`;
 const FRICTION = ['Easy', 'Okay', 'So-so', 'Hard', 'Very hard'];
 
-const fmt = (ms: number) => {
-  const s = Math.max(0, Math.ceil(ms / 1000));
-  return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
-};
-
-export function ClassroomScreen({ characterId, initialSubject = '', initialEventId, agendaDate, onExit, onRecords }: Props) {
+export function ClassroomScreen({ characterId, initialSubject = '', initialEventId, agendaDate, onExit, onRecords, visible, focusTimer, onEnd }: Props) {
   const character = getCharacter(characterId);
   const { settings, playing, start, stop } = useSoundscape();
   const [phase, setPhase] = useState<Phase>('explore');
@@ -66,11 +65,13 @@ export function ClassroomScreen({ characterId, initialSubject = '', initialEvent
   // ── 세션 계획 ──
   const [minutes, setMinutes] = useState(() => loadValue('focusMinutes', 25));
   const [subject, setSubject] = useState(initialSubject);
+  const [mode, setMode] = useState<FocusMode>('timer');
 
   // ── 타이머 ──
-  const [status, setStatus] = useState<TimerStatus>('running');
-  const [remaining, setRemaining] = useState(minutes * 60_000);
-  const endAt = useRef(0);
+  const { session, clear } = focusTimer;
+  const status = session?.status ?? 'running';
+  const remaining = session?.remainingMs ?? minutes * 60_000;
+  const takingBreak = session?.stage === 'break' || session?.stage === 'return';
   const [done, setDone] = useState<Done | null>(null);
   // 생각 내려놓기(C6): 타이머는 멈추지 않는다
   const [thoughtOpen, setThoughtOpen] = useState(false);
@@ -130,26 +131,32 @@ export function ClassroomScreen({ characterId, initialSubject = '', initialEvent
   );
 
   useEffect(() => {
-    if (phase !== 'focus' || status !== 'running') return;
-    const id = window.setInterval(() => {
-      const left = endAt.current - Date.now();
-      if (left <= 0) {
-        window.clearInterval(id);
-        finish(minutes * 60_000);
-      } else setRemaining(left);
-    }, 250);
-    return () => window.clearInterval(id);
-  }, [phase, status, finish, minutes]);
+    if (session?.stage !== 'complete') return;
+    if (session.focusedMs >= 10_000) finish(session.focusedMs);
+    else { setThoughtOpen(false); setPhase('plan'); }
+    clear();
+  }, [session, finish, clear]);
+
+  useEffect(() => {
+    if (!visible || takingBreak) { stop(); setThoughtOpen(false); setMixerOpen(false); setPeopleOpen(false); }
+    else if (session?.stage === 'focus') void start();
+  }, [visible, session?.stage]);
+
+  useEffect(() => {
+    if (session?.stage === 'break' || session?.stage === 'return') soundscape.chime();
+  }, [session?.stage]);
 
   // 화면을 떠나면 소리 정지
   useEffect(() => () => soundscape.stop(), []);
+  const sittingTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(sittingTimer.current), []);
 
   // 앉는 탭(사용자 제스처) 안에서 오디오를 열어 두고, 카메라 이동이 끝나면 소리 설정을 띄움
   const sit = (s: Seat) => {
     setSeat(s);
     setPhase('sitting');
     void start();
-    window.setTimeout(() => setPhase('sounds'), 1900);
+    sittingTimer.current = window.setTimeout(() => setPhase('sounds'), 1900);
   };
 
   const startFocus = async () => {
@@ -157,26 +164,9 @@ export function ClassroomScreen({ characterId, initialSubject = '', initialEvent
     if (!intent) return;
     setSubject(intent.text);
     save('focusMinutes', minutes);
-    endAt.current = Date.now() + minutes * 60_000;
-    setRemaining(minutes * 60_000);
-    setStatus('running');
+    focusTimer.start(mode, minutes, intent.text);
     setPhase('focus');
     if (!playing) await start();
-  };
-
-  const togglePause = () => {
-    if (status === 'running') setStatus('paused');
-    else {
-      endAt.current = Date.now() + remaining;
-      setStatus('running');
-    }
-  };
-
-  // 일찍 끝내기: 10초 넘게 집중했으면 기록, 아니면 계획 화면으로만 돌아감
-  const endNow = () => {
-    const focused = minutes * 60_000 - remaining;
-    if (focused >= 10_000) finish(focused);
-    else setPhase('plan');
   };
 
   const toggleSound = async (id: SoundId) => {
@@ -198,12 +188,12 @@ export function ClassroomScreen({ characterId, initialSubject = '', initialEvent
     }
   };
 
-  const progress = 1 - remaining / (minutes * 60_000);
+  const progress = 1 - remaining / (takingBreak ? 5 * 60_000 : session?.focusDurationMs ?? minutes * 60_000);
   const seated = phase !== 'explore';
-  const focusing = phase === 'focus' && status === 'running';
+  const focusing = phase === 'focus' && !takingBreak && status === 'running';
 
   return (
-    <motion.main className={`screen ${styles.room}`} {...screenMotion}>
+    <motion.main className={`screen ${styles.room}`} style={{ display: visible ? undefined : 'none' }} aria-hidden={!visible || undefined} {...screenMotion}>
       <AnimatePresence initial={false}>
         {seated && seat ? (
           <motion.div key="seated" className={styles.layer} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.6 }}>
@@ -214,7 +204,7 @@ export function ClassroomScreen({ characterId, initialSubject = '', initialEvent
               raised={phase === 'sounds' || phase === 'plan' || mixerOpen || peopleOpen}
               soundOn={(id) => playing && settings.sounds[id].on}
               onToggleSound={toggleSound}
-              mySubject={subject}
+              mySubject={takingBreak ? 'On a break' : subject}
               onPeople={() => setPeopleOpen(true)}
             />
           </motion.div>
@@ -255,7 +245,7 @@ export function ClassroomScreen({ characterId, initialSubject = '', initialEvent
       </div>}
 
       {/* 집중 중 HUD: 미니맵·소리 아이콘·데모 채팅 */}
-      {phase === 'focus' && seat && !done && (
+      {phase === 'focus' && seat && !done && !takingBreak && (
         <ClassroomHud dimmed={thoughtOpen} seat={seat} soundOn={(id) => playing && !muted && settings.sounds[id].on} onToggleSound={toggleSound} onMixer={() => setMixerOpen(true)} raised />
       )}
 
@@ -265,26 +255,27 @@ export function ClassroomScreen({ characterId, initialSubject = '', initialEvent
           <motion.section className={`${styles.panel} ${thoughtOpen ? styles.dimmed : ''}`} inert={thoughtOpen} aria-hidden={thoughtOpen || undefined} aria-label="Focus timer" initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}>
             <div className={styles.timerRow}>
               <div className={styles.ring} style={{ ['--p' as string]: progress }}>
-                <span className={styles.time}>{fmt(remaining)}</span>
+                <span className={styles.time}>{formatCountdown(remaining)}</span>
               </div>
               <div className={styles.timerSide}>
-                <span className={styles.nowLabel}>{status === 'running' ? 'Now focusing on' : 'Paused'}</span>
+                <span className={styles.nowLabel}>{takingBreak ? 'Pomodoro · break time' : status === 'running' ? (mode === 'pomodoro' ? `Pomodoro · round ${(session?.rounds ?? 0) + 1}` : 'Now focusing on') : 'Paused'}</span>
                 <p className={styles.state}>{subject || 'Just focus'}</p>
-                <button type="button" className={styles.with} onClick={() => setPeopleOpen(true)}>
+                {!takingBreak && <button type="button" className={styles.with} onClick={() => setPeopleOpen(true)}>
                   with {CLASSMATES.length} Cloudees ›
-                </button>
+                </button>}
+                {takingBreak && <p className={styles.hint}>Your seat stays yours. Wander while the break timer keeps running.</p>}
               </div>
             </div>
             <div className={styles.actions}>
-              <button type="button" className={`pill pill-soft ${styles.end}`} onClick={endNow}>
+              <button type="button" className={`pill pill-soft ${styles.end}`} onClick={onEnd}>
                 End
               </button>
-              <button type="button" className={`pill pill-soft ${styles.end}`} onClick={() => setThoughtOpen(true)} aria-label="Park a thought in the Library">
-                📝 Note
-              </button>
-              <button type="button" className="pill pill-primary" onClick={togglePause}>
+              {!takingBreak && <button type="button" className={`pill pill-soft ${styles.end}`} onClick={() => setThoughtOpen(true)} aria-label="Park a thought in the Library">
+                Note
+              </button>}
+              {takingBreak ? <button type="button" className="pill pill-primary" onClick={onExit}>Explore spaces</button> : <button type="button" className="pill pill-primary" onClick={focusTimer.togglePause}>
                 {status === 'running' ? 'Pause' : 'Resume'}
-              </button>
+              </button>}
             </div>
           </motion.section>
         )}
@@ -302,7 +293,7 @@ export function ClassroomScreen({ characterId, initialSubject = '', initialEvent
         onStop={stop}
       />
       {/* ② 시간 + 무엇을 공부할지 */}
-      <SessionSheet open={phase === 'plan' && !done && !peopleOpen && !mixerOpen} minutes={minutes} subject={subject} initialEventId={initialEventId} agendaDate={agendaDate} onMinutes={setMinutes} onSubject={setSubject} onStart={startFocus} />
+      <SessionSheet open={phase === 'plan' && !done && !peopleOpen && !mixerOpen} mode={mode} onMode={setMode} onClose={() => setPhase('explore')} minutes={minutes} subject={subject} initialEventId={initialEventId} agendaDate={agendaDate} onMinutes={setMinutes} onSubject={setSubject} onStart={startFocus} />
 
       <SoundMixer open={mixerOpen} onClose={() => setMixerOpen(false)} playing={playing} onPlay={start} onStop={stop} />
       <PeopleSheet open={peopleOpen} onClose={() => setPeopleOpen(false)} me={character} mySubject={phase === 'focus' ? subject : undefined} />
