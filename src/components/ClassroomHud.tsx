@@ -14,6 +14,7 @@ interface Props {
   onToggleSound: (id: SoundId) => void;
   onMixer: () => void;
   raised: boolean; // 아래에 타이머 패널이 있을 때
+  dimmed?: boolean; // 위에 노트 창이 떠 있을 때: 소리 버튼·채팅을 잠시 숨긴다
 }
 
 const { width: W, height: H, top } = CLASSROOM;
@@ -30,7 +31,7 @@ const LATER = [
   { who: 'Luna', text: 'the sunlight is nice today' },
 ];
 
-export function ClassroomHud({ seat, soundOn, onToggleSound, onMixer, raised }: Props) {
+export function ClassroomHud({ seat, soundOn, onToggleSound, onMixer, raised, dimmed = false }: Props) {
   const [chatOpen, setChatOpen] = useState(false);
   const [messages, setMessages] = useState(SEED);
   const [draft, setDraft] = useState('');
@@ -74,22 +75,22 @@ export function ClassroomHud({ seat, soundOn, onToggleSound, onMixer, raised }: 
       </motion.aside>
 
       {/* 소리 아이콘: 하나씩 켜고 끈다(믹서와 같은 채널) */}
-      <div className={`${styles.sounds} ${raised ? styles.raised : ''}`} role="group" aria-label="Ambient sounds">
+      <div className={`${styles.sounds} ${raised ? styles.raised : ''} ${dimmed ? styles.dimmed : ''}`} inert={dimmed} aria-hidden={dimmed || undefined} role="group" aria-label="Ambient sounds">
         {SOUNDS.map((s) => {
           const on = soundOn(s.id);
           return (
-            <button key={s.id} type="button" className={on ? styles.soundOn : ''} onClick={() => onToggleSound(s.id)} aria-pressed={on} aria-label={`${s.label} ${on ? 'on' : 'off'}`}>
+            <button key={s.id} type="button" className={on ? styles.soundOn : ''} onClick={() => onToggleSound(s.id)} aria-pressed={on} aria-label={`${s.label} sound ${on ? 'on' : 'off'}`} title={`${s.label} sound`} data-tip={`${s.label} sound`}>
               <span aria-hidden>{ICON[s.id]}</span>
             </button>
           );
         })}
-        <button type="button" onClick={onMixer} aria-label="Open sound mixer">
+        <button type="button" onClick={onMixer} aria-label="Open sound mixer" title="Sound mixer" data-tip="Sound mixer">
           <span aria-hidden>🎚️</span>
         </button>
       </div>
 
       {/* 데모 채팅 */}
-      <div className={`${styles.chat} ${raised ? styles.raised : ''}`}>
+      <div className={`${styles.chat} ${raised ? styles.raised : ''} ${dimmed ? styles.dimmed : ''}`} inert={dimmed} aria-hidden={dimmed || undefined}>
         <AnimatePresence initial={false}>
           {chatOpen && (
             <motion.div className={styles.chatPanel} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}>

@@ -76,6 +76,32 @@ export function ClassroomScreen({ characterId, initialSubject = '', initialEvent
   const [thoughtOpen, setThoughtOpen] = useState(false);
   const [thought, setThought] = useState('');
   const [toast, setToast] = useState<string | null>(null);
+  const thoughtRef = useRef<HTMLInputElement>(null);
+  const thoughtBox = useRef<HTMLDivElement>(null);
+
+  // iOS 키보드: visualViewport로 보이는 영역을 재서 창이 키보드 위에 남도록(창이 열려 있을 때만)
+  useEffect(() => {
+    const vv = window.visualViewport;
+    const el = thoughtBox.current;
+    if (!thoughtOpen || !vv || !el) return;
+    const update = () => {
+      el.style.setProperty('--vv-top', `${vv.offsetTop}px`);
+      el.style.setProperty('--vv-h', `${vv.height}px`);
+    };
+    update();
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+    };
+  }, [thoughtOpen]);
+
+  useEffect(() => {
+    if (!thoughtOpen) return;
+    const id = window.setTimeout(() => thoughtRef.current?.focus({ preventScroll: true }), 220);
+    return () => window.clearTimeout(id);
+  }, [thoughtOpen]);
 
   const saveThought = () => {
     if (!thought.trim()) return;
@@ -90,6 +116,7 @@ export function ClassroomScreen({ characterId, initialSubject = '', initialEvent
   const finish = useCallback(
     (focusedMs: number) => {
       const mins = Math.max(1, Math.round(focusedMs / 60_000));
+      setThoughtOpen(false);
       const label = subject || 'Focus';
       const session = addSession({ subject: label, minutes: mins, seat: seat?.id ?? '' });
       soundscape.chime();
@@ -229,13 +256,13 @@ export function ClassroomScreen({ characterId, initialSubject = '', initialEvent
 
       {/* 집중 중 HUD: 미니맵·소리 아이콘·데모 채팅 */}
       {phase === 'focus' && seat && !done && (
-        <ClassroomHud seat={seat} soundOn={(id) => playing && !muted && settings.sounds[id].on} onToggleSound={toggleSound} onMixer={() => setMixerOpen(true)} raised />
+        <ClassroomHud dimmed={thoughtOpen} seat={seat} soundOn={(id) => playing && !muted && settings.sounds[id].on} onToggleSound={toggleSound} onMixer={() => setMixerOpen(true)} raised />
       )}
 
       {/* 집중 중: 남은 시간 + 지금 하는 것 */}
       <AnimatePresence>
         {phase === 'focus' && (
-          <motion.section className={styles.panel} aria-label="Focus timer" initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}>
+          <motion.section className={`${styles.panel} ${thoughtOpen ? styles.dimmed : ''}`} inert={thoughtOpen} aria-hidden={thoughtOpen || undefined} aria-label="Focus timer" initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}>
             <div className={styles.timerRow}>
               <div className={styles.ring} style={{ ['--p' as string]: progress }}>
                 <span className={styles.time}>{fmt(remaining)}</span>
@@ -253,7 +280,7 @@ export function ClassroomScreen({ characterId, initialSubject = '', initialEvent
                 End
               </button>
               <button type="button" className={`pill pill-soft ${styles.end}`} onClick={() => setThoughtOpen(true)} aria-label="Park a thought in the Library">
-                Note
+                📝 Note
               </button>
               <button type="button" className="pill pill-primary" onClick={togglePause}>
                 {status === 'running' ? 'Pause' : 'Resume'}
@@ -291,18 +318,31 @@ export function ClassroomScreen({ characterId, initialSubject = '', initialEvent
       {/* C6 생각 내려놓기 */}
       <AnimatePresence>
         {thoughtOpen && (
-          <motion.div className={styles.doneBackdrop} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setThoughtOpen(false)}>
-            <motion.div className={styles.doneCard} role="dialog" aria-modal="true" aria-label="Park a thought" initial={{ y: 40 }} animate={{ y: 0 }} exit={{ y: 20, opacity: 0 }} onClick={(e) => e.stopPropagation()}>
+          <motion.div ref={thoughtBox} className={styles.thoughtBackdrop} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setThoughtOpen(false)}>
+            <motion.div
+              className={styles.thoughtCard}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Park a thought"
+              initial={{ y: -16, opacity: 0 }}
+              animate={{ y: 0, opacity: 1, transition: { duration: 0.22 } }}
+              exit={{ y: -10, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
               <h2>Park a thought</h2>
               <p>One line goes to your Library. The timer keeps running.</p>
               <input
+                ref={thoughtRef}
                 className={styles.thoughtInput}
-                autoFocus
                 maxLength={80}
                 value={thought}
                 placeholder="e.g. Email the professor later"
+                enterKeyHint="done"
                 onChange={(e) => setThought(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && saveThought()}
+                onKeyDown={(e) => {
+                  // 한글·베트남어 IME 조합 중의 Enter는 글자 확정이므로 저장하지 않는다
+                  if (e.key === 'Enter' && !e.nativeEvent.isComposing) saveThought();
+                }}
               />
               <button type="button" className="pill pill-primary" onClick={saveThought} disabled={!thought.trim()}>
                 Save to Library
